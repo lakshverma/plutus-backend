@@ -1,4 +1,4 @@
-const { PG_CONNECTION_OBJ } = require("../util/config");
+const { PG_CONNECTION_OBJ } = require("../../../util/config");
 
 const { Pool } = require("pg");
 
