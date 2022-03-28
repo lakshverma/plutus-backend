@@ -1,5 +1,5 @@
 const { check } = require("express-validator");
-const { validationMiddleware } = require("../../util/middleware");
+const { validationMiddleware } = require("../../../util/middleware");
 
 const validateSubscriptionPlan = [
   check("plan_name")

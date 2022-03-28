@@ -1,4 +1,4 @@
-const db = require("../common/db/index");
+const db = require("../../common/db/index");
 
 const get = async () => {
   const text = "SELECT * FROM subscription_plans";
