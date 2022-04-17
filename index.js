@@ -1,6 +1,6 @@
 const app = require('./src/app')
 const http = require('http')
-const { PORT } = require('./util/config')
+const { PORT } = require('./src/common/util/config')
 
 const server = http.createServer(app)
 
