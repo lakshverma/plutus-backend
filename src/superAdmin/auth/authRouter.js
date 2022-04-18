@@ -1,7 +1,7 @@
 const Router = require("express-promise-router");
-const { validateSuperAdminSignup } = require("./authValidator");
+const { validateSuperAdminSignup, validateSuperAdminLogin } = require("./authValidator");
 const { authorize } = require("../../common/util/middleware");
-const { createSuperAdmin, loginRoot } = require("./authController");
+const { createSuperAdmin, loginRoot, loginSuperAdmin } = require("./authController");
 
 const router = new Router();
 
@@ -13,6 +13,11 @@ router.post(
   ],
   createSuperAdmin
 );
+
+router.post("/sa-login", validateSuperAdminLogin, loginSuperAdmin);
+
+// router.post("/signup", createTenant);
+// router.get("/:tenantid", tenantInfo)
 
 router.post("/", loginRoot);
 

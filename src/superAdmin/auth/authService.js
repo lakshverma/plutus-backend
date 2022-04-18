@@ -55,9 +55,9 @@ const createUserService = async (values, role = "admin") => {
   return newUser;
 };
 
-const checkExistingUser = async (userEmail) => {
+const checkExistingUserService = async (userEmail) => {
   const user = await dal.findUser(userEmail);
   return user ? user : null;
 };
 
-module.exports = { createUserService, checkExistingUser };
+module.exports = { createUserService, checkExistingUserService };
