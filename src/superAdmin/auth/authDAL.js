@@ -1,4 +1,5 @@
 const db = require("../../common/db/index");
+const logger = require("../../common/util/logger");
 
 const findUser = async (userEmail) => {
   const text = "SELECT * FROM org_user WHERE email = $1";
@@ -44,7 +45,6 @@ const createUser = async (userValues, orgValues) => {
   `;
 
   try {
-    console.log("let's begin the try block");
     await client.query("BEGIN");
 
     newOrg = await client.query(orgQueryText, orgValues);
@@ -59,7 +59,7 @@ const createUser = async (userValues, orgValues) => {
 
     await client.query("COMMIT");
   } catch (e) {
-    console.error(e.stack);
+    logger.error(e.stack);
     await client.query("ROLLBACK");
     // Resetting the newOrg and newUser values to ensure the function returns undefined in an event there's an error.
     newOrg = { rows: [] };

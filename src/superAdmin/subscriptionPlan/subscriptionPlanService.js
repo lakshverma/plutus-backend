@@ -7,7 +7,6 @@ const getPlanService = async () => {
 
 const createPlanService = async (values) => {
   const newPlan = await dal.insert(values);
-  //   console.log("here is the value of newPlan: ", newPlan);
   return newPlan;
 };
 
