@@ -11,7 +11,7 @@ const testConnection = async () => {
       `db connection successful! Response: ${JSON.stringify(query.rows)}`
     );
   } catch (error) {
-    logger.fatal(`db connection unsuccessful. ${error}`);
+    logger.error(`db connection unsuccessful. ${error}`);
   }
 };
 
