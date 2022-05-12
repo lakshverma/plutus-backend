@@ -19,9 +19,21 @@ const PG_CONNECTION_OBJ =
     ? production_pg_info
     : null;
 
+const ZEPTOMAIL_CONFIG = {
+  url: process.env.ZEPTOMAIL_API_URL,
+  bounceAddress: process.env.ZEPTOMAIL_BOUNCE_ADDRESS,
+  fromEmail: process.env.ZEPTOMAIL_FROM_ADDRESS,
+  fromName: process.env.ZEPTOMAIL_FROM_NAME,
+  signup: {
+    token: process.env.ZEPTOMAIL_SIGNUP_TOKEN,
+    templateKey: process.env.ZEPTOMAIL_SIGNUP_TEMPLATE_KEY,
+  },
+};
+
 const PORT = process.env.PORT || 3001;
 
 module.exports = {
   PG_CONNECTION_OBJ,
+  ZEPTOMAIL_CONFIG,
   PORT,
 };

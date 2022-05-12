@@ -22,7 +22,8 @@
     "morgan": "^1.10.0",
     "pg": "^8.7.1",
     "winston": "^3.7.2",
-    "winston-daily-rotate-file": "^4.6.1"
+    "winston-daily-rotate-file": "^4.6.1",
+    "zeptomail": "^3.0.0"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
