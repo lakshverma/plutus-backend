@@ -32,39 +32,44 @@ const authorize = (roles = []) => {
   ];
 };
 
-const tokenExtractor = async (request, response, next) => {
-  const authorization = request.get("authorization");
+const tokenExtractor = async (req, res, next) => {
+  const authorization = req.get("authorization");
   if (authorization && authorization.toLowerCase().startsWith("bearer ")) {
-    request.token = authorization.substring(7);
+    req.token = authorization.substring(7);
     return next();
   }
-  request.token = null;
+  req.token = null;
   next();
 };
 
-const unknownEndpoint = (request, response) => {
-  response.status(404).send({ error: "unknown endpoint" });
+const unknownEndpoint = (req, res) => {
+  res.status(404).send({ error: "unknown endpoint" });
 };
 
-const errorHandler = (error, request, response, next) => {
+const errorHandler = (error, req, res, next) => {
   logger.error(error.message);
 
   if (error.name === "CastError") {
-    return response.status(400).send({ error: "malformatted id" });
+    return res.status(400).send({ error: "malformatted id" });
   }
   if (error.name === "ValidationError") {
-    return response.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
   if (error.name === "TypeError") {
-    return response.status(400).json({ TypeError: error.message });
+    return res.status(400).json({ TypeError: error.message });
   }
   if (error.name === "JsonWebTokenError") {
-    return response.status(401).json({
+    return res.status(401).json({
       error: "invalid token",
     });
   }
+  if (error.name === "TokenExpiredError") {
+    return res.status(401).json({
+      error: "token expired",
+    });
+  }
   if (error.name === "UnauthorizedError") {
-    return response.status(401).json({
+    return res.status(401).json({
       error: "token missing or not authorized to access",
     });
   }

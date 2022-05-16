@@ -28,6 +28,13 @@ const ZEPTOMAIL_CONFIG = {
     token: process.env.ZEPTOMAIL_SIGNUP_TOKEN,
     templateKey: process.env.ZEPTOMAIL_SIGNUP_TEMPLATE_KEY,
   },
+  recover: {
+    token: process.env.ZEPTOMAIL_RECOVER_TOKEN,
+    templateKey: {
+      passwordResetLink: process.env.ZEPTOMAIL_PASSWORD_RESET_TEMPLATE_KEY,
+      passwordResetSuccess: process.env.ZEPTOMAIL_RESET_SUCCESS_KEY,
+    },
+  },
 };
 
 const PORT = process.env.PORT || 3001;

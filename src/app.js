@@ -2,7 +2,7 @@ const express = require("express");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const logger = require("./common/util/logger");
-const { unknownEndpoint, errorHandler } = require("./common/util/middleware");
+const { unknownEndpoint, errorHandler, tokenExtractor } = require("./common/util/middleware");
 const superAdminAppRoutes = require("./superAdmin/superAdminApp");
 
 const app = express();
@@ -19,6 +19,8 @@ app.use(
     },
   })
 );
+
+app.use(tokenExtractor);
 
 app.use("/superadmin", superAdminAppRoutes);
 

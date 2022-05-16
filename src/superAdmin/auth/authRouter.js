@@ -3,6 +3,7 @@ const {
   validateSuperAdminSignup,
   validateLogin,
   validateAdminSignup,
+  validateResetPassword,
 } = require("./authValidator");
 const { authorize } = require("../../common/util/middleware");
 const {
@@ -12,6 +13,9 @@ const {
   createTenant,
   verifyUser,
   confirmEmail,
+  requestPasswordReset,
+  resetPasswordEmailConfirm,
+  resetPassword,
 } = require("./authController");
 
 const router = new Router();
@@ -34,7 +38,11 @@ router.get("/verify/:token", verifyUser);
 
 router.post("/confirm-email", confirmEmail);
 
-// router.get("/:tenantid", tenantInfo)
+router.post("/request-pass", requestPasswordReset);
+
+router.get("/reset-pass/:token", resetPasswordEmailConfirm);
+
+router.post("/reset-pass", validateResetPassword, resetPassword);
 
 router.post("/", loginRoot);
 
