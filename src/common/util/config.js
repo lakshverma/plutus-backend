@@ -10,6 +10,18 @@ const dev_pg_info = {
 };
 const test_pg_info = null;
 
+const production_tenant_info = null;
+
+const dev_tenant_info = {
+  user: process.env.DEV_TENANTUSER,
+  host: process.env.DEV_PGHOST,
+  database: process.env.DEV_PGDATABASE,
+  password: process.env.DEV_TENANTPASSWORD,
+  port: process.env.PGPORT,
+};
+
+const test_tenant_info = null;
+
 const PG_CONNECTION_OBJ =
   process.env.NODE_ENV === "test"
     ? test_pg_info
@@ -18,6 +30,25 @@ const PG_CONNECTION_OBJ =
     : process.env.NODE_ENV === "production"
     ? production_pg_info
     : null;
+
+const PG_TENANT_CONNECTION_OBJ =
+  process.env.NODE_ENV === "test"
+    ? test_tenant_info
+    : process.env.NODE_ENV === "development"
+    ? dev_tenant_info
+    : process.env.NODE_ENV === "production"
+    ? production_tenant_info
+    : null;
+
+const TENANT_CONTEXT = {
+  orgId: "",
+  get tenantInfo() {
+    return String(orgId);
+  },
+  set tenantInfo(uuid) {
+    this.orgId = uuid;
+  },
+};
 
 const ZEPTOMAIL_CONFIG = {
   url: process.env.ZEPTOMAIL_API_URL,
@@ -41,6 +72,8 @@ const PORT = process.env.PORT || 3001;
 
 module.exports = {
   PG_CONNECTION_OBJ,
+  PG_TENANT_CONNECTION_OBJ,
+  TENANT_CONTEXT,
   ZEPTOMAIL_CONFIG,
   PORT,
 };

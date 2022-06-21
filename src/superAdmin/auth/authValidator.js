@@ -103,7 +103,7 @@ const validateLogin = [
     .bail()
     .notEmpty()
     .withMessage("password can not be empty.")
-    .bail()
+    .bail(),
 ];
 
 const validateAdminSignup = [
@@ -194,7 +194,7 @@ const validateAdminSignup = [
     .isString()
     .withMessage("Job Title must be a text value.")
     .bail()
-    .isLength({min: 3, max: 25})
+    .isLength({ min: 3, max: 25 })
     .withMessage("Job Title must be between 3 and 25 characters")
     .bail(),
   check("orgName")
@@ -245,7 +245,7 @@ const validateResetPassword = [
       "password must have at least 8 characters with a min of 1 lowercase, 1 uppercase, 1 numeric and 1 special character."
     )
     .bail(),
-    check("confirmPassword")
+  check("confirmPassword")
     .exists()
     .withMessage("password is mandatory.")
     .bail()
@@ -257,16 +257,17 @@ const validateResetPassword = [
       "password must have at least 8 characters with a min of 1 lowercase, 1 uppercase, 1 numeric and 1 special character."
     )
     .bail()
-    .custom(async (confirmPassword, {req}) => {
-      const password = req.body.password
- 
+    .custom(async (confirmPassword, { req }) => {
+      const password = req.body.password;
+
       // If password and confirm password not same
       // don't allow to sign up and throw error
-      if(password !== confirmPassword){
-        throw new Error('Passwords must be same')
+      if (password !== confirmPassword) {
+        throw new Error("Passwords must be same");
       }
     }),
-  validationMiddleware];
+  validationMiddleware,
+];
 
 module.exports = {
   validateSuperAdminSignup,

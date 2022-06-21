@@ -6,16 +6,16 @@ const logger = require("../../common/util/logger");
 const findUser = async (userIdentifier, identifierType = "email") => {
   if (identifierType === "user_id") {
     const text = "SELECT * FROM org_user WHERE user_id = $1";
-    const { rows } = await db.query(text, [userIdentifier]);
+    const { rows } = await db.query(text, [userIdentifier], "superAdmin");
     return rows[0];
   }
   const text = "SELECT * FROM org_user WHERE email = $1";
-  const { rows } = await db.query(text, [userIdentifier]);
+  const { rows } = await db.query(text, [userIdentifier], "superAdmin");
   return rows[0];
 };
 
 const createUser = async (userValues, orgValues) => {
-  const client = await db.getClient();
+  const client = await db.getClient("superAdmin");
   let newOrg = null;
   let newUser = null;
 
@@ -96,14 +96,14 @@ const updateUser = async (userId, valuesToUpdate) => {
   const values = Object.values(valuesToUpdate);
   values.push(userId);
   
-  const { rows } = await db.query(text, values);
+  const { rows } = await db.query(text, values, "superAdmin");
 
   return rows[0];
 };
 
 const findOrg = async(orgName) => {
   const text = "SELECT * FROM org_details WHERE org_name = $1";
-  const { rows } = await db.query(text, [orgName]);
+  const { rows } = await db.query(text, [orgName], "superAdmin");
   return rows[0];
 };
 
