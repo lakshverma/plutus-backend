@@ -143,50 +143,6 @@ const sendWelcomeEmailService = async (userDetails) => {
   return 0;
 };
 
-const sendPassResetEmailService = async (userDetails) => {
-  const url = ZEPTOMAIL_CONFIG.url;
-  const token = ZEPTOMAIL_CONFIG.recover.token;
-
-  const userForJwtToken = {
-    user_id: userDetails.user_id,
-  };
-
-  const jwtToken = jwt.sign(userForJwtToken, process.env.SECRET, {
-    expiresIn: 600,
-  });
-
-  let client = new SendMailClient({ url, token });
-
-  client
-    .sendMailWithTemplate({
-      mail_template_key: ZEPTOMAIL_CONFIG.recover.templateKey.passwordResetLink,
-      bounce_address: ZEPTOMAIL_CONFIG.bounceAddress,
-      from: {
-        address: ZEPTOMAIL_CONFIG.fromEmail,
-        name: ZEPTOMAIL_CONFIG.fromName,
-      },
-      to: [
-        {
-          email_address: {
-            address: userDetails.email,
-            name: userDetails.first_name,
-          },
-        },
-      ],
-      merge_info: {
-        name: userDetails.first_name,
-        email: userDetails.email,
-        password_reset_link: jwtToken,
-      },
-      track_clicks: true,
-      track_opens: true,
-    })
-    .then((resp) => logger.info(resp))
-    .catch((error) => logger.error(error));
-
-  return 0;
-};
-
 const verifyUserService = async (id) => {
   const user = await checkExistingUserService(id, "user_id");
   if (!user) {
@@ -208,70 +164,10 @@ const verifyUserService = async (id) => {
   return verificationStatus;
 };
 
-const resetPasswordService = async (userDetails, passwordToUpdate) => {
-  const saltRounds = 10;
-  const newPasswordHash = await bcrypt.hash(passwordToUpdate, saltRounds);
-
-  const userToUpdate = {
-    first_name: userDetails.first_name,
-    middle_name: userDetails.middle_name,
-    last_name: userDetails.last_name,
-    email: userDetails.email,
-    username: userDetails.username,
-    password_hash: newPasswordHash,
-    user_roles_user_roles_id: userDetails.user_roles_user_roles_id,
-    job_title: userDetails.job_title,
-    status: userDetails.status,
-  };
-
-  const updatedUser = await dal.updateUser(userDetails.user_id, userToUpdate);
-
-  return updatedUser;
-};
-
-const resetPasswordConfirmService = async (userDetails) => {
-  const url = ZEPTOMAIL_CONFIG.url;
-  const token = ZEPTOMAIL_CONFIG.recover.token;
-
-  let client = new SendMailClient({ url, token });
-
-  client
-    .sendMailWithTemplate({
-      mail_template_key:
-        ZEPTOMAIL_CONFIG.recover.templateKey.passwordResetSuccess,
-      bounce_address: ZEPTOMAIL_CONFIG.bounceAddress,
-      from: {
-        address: ZEPTOMAIL_CONFIG.fromEmail,
-        name: ZEPTOMAIL_CONFIG.fromName,
-      },
-      to: [
-        {
-          email_address: {
-            address: userDetails.email,
-            name: userDetails.first_name,
-          },
-        },
-      ],
-      merge_info: {
-        name: userDetails.first_name,
-        email: userDetails.email,
-      },
-      track_clicks: true,
-      track_opens: true,
-    })
-    .then((resp) => logger.info(resp))
-    .catch((error) => logger.error(error));
-
-  return 0;
-};
-
 module.exports = {
   createUserService,
   checkExistingUserService,
   checkExistingTenantService,
   sendWelcomeEmailService,
-  sendPassResetEmailService,
   verifyUserService,
-  resetPasswordService,
-  resetPasswordConfirmService,
 };

@@ -13,9 +13,6 @@ const {
   createTenant,
   verifyUser,
   confirmEmail,
-  requestPasswordReset,
-  resetPasswordEmailConfirm,
-  resetPassword,
 } = require("./authController");
 
 const router = new Router();
@@ -37,12 +34,6 @@ router.post(
 router.get("/verify/:token", verifyUser);
 
 router.post("/confirm-email", confirmEmail);
-
-router.post("/request-pass", requestPasswordReset);
-
-router.get("/reset-pass/:token", resetPasswordEmailConfirm);
-
-router.post("/reset-pass", validateResetPassword, resetPassword);
 
 router.post("/", loginRoot);
 
