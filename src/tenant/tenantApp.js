@@ -3,6 +3,6 @@ const authRouter = require("./auth/authRouter");
 
 const tenantAppRoutes = express.Router();
 
-tenantAppRoutes.use("/", authRouter);
+tenantAppRoutes.use("/auth", authRouter);
 
 module.exports = tenantAppRoutes;

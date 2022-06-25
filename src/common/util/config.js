@@ -59,6 +59,10 @@ const ZEPTOMAIL_CONFIG = {
     token: process.env.ZEPTOMAIL_SIGNUP_TOKEN,
     templateKey: process.env.ZEPTOMAIL_SIGNUP_TEMPLATE_KEY,
   },
+  signupTenant: {
+    token: process.env.ZEPTOMAIL_SIGNUP_TOKEN,
+    templateKey: process.env.ZEPTOMAIL_TENANT_SIGNUP_TEMPLATE_KEY,
+  },
   recover: {
     token: process.env.ZEPTOMAIL_RECOVER_TOKEN,
     templateKey: {
