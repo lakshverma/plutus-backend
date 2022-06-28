@@ -1,21 +1,21 @@
-const db = require("../../common/db/index");
-const logger = require("../../common/util/logger");
+const db = require('../../common/db/index');
+const logger = require('../../common/util/logger');
 
-// Allows searching a user by user_id (uuid v4 type) or email. 
+// Allows searching a user by user_id (uuid v4 type) or email.
 // By default, the function accepts email ids as unique identifiers.
-const findUser = async (userIdentifier, identifierType = "email") => {
-  if (identifierType === "user_id") {
-    const text = "SELECT * FROM org_user WHERE user_id = $1";
-    const { rows } = await db.query(text, [userIdentifier], "superAdmin");
+const findUser = async (userIdentifier, identifierType = 'email') => {
+  if (identifierType === 'user_id') {
+    const text = 'SELECT * FROM org_user WHERE user_id = $1';
+    const { rows } = await db.query(text, [userIdentifier], 'superAdmin');
     return rows[0];
   }
-  const text = "SELECT * FROM org_user WHERE email = $1";
-  const { rows } = await db.query(text, [userIdentifier], "superAdmin");
+  const text = 'SELECT * FROM org_user WHERE email = $1';
+  const { rows } = await db.query(text, [userIdentifier], 'superAdmin');
   return rows[0];
 };
 
 const createUser = async (userValues, orgValues) => {
-  const client = await db.getClient("superAdmin");
+  const client = await db.getClient('superAdmin');
   let newOrg = null;
   let newUser = null;
 
@@ -51,59 +51,63 @@ const createUser = async (userValues, orgValues) => {
   WHERE org_name = $1
   `;
 
+  // Test the transaction logic more extensively for edge cases.
   try {
-    await client.query("BEGIN");
+    await client.query('BEGIN');
 
     newOrg = await client.query(orgQueryText, orgValues);
 
-    // If the default superAdmin org already exists, we fetch its id from db using org name from orgValues array defined in authService.
-    if ((newOrg.rows = [])) {
+    // If the default superAdmin org already exists, we fetch its id from db using
+    // org name from orgValues array defined in authService.
+    if ((newOrg.rows.length === 0)) {
       newOrg = await client.query(orgIdQueryText, [orgValues[0]]);
     }
 
     const userValuesWithOrgId = [newOrg.rows[0].org_id, ...userValues];
     newUser = await client.query(userQueryText, userValuesWithOrgId);
 
-    await client.query("COMMIT");
+    await client.query('COMMIT');
+    return { ...newOrg.rows[0], ...newUser.rows[0] };
   } catch (e) {
     logger.error(e.stack);
-    await client.query("ROLLBACK");
-    // Resetting the newOrg and newUser values to ensure the function returns undefined in an event there's an error.
+    await client.query('ROLLBACK');
+    // Resetting the newOrg and newUser values to ensure the function returns undefined
+    // in an event there's an error.
     newOrg = { rows: [] };
     newUser = { rows: [] };
+    return { ...newOrg.rows[0], ...newUser.rows[0] };
   } finally {
     client.release();
-    return { ...newOrg.rows[0], ...newUser.rows[0] };
   }
 };
 
 const updateUser = async (userId, valuesToUpdate) => {
-  const length = Object.keys(valuesToUpdate).length;
+  const { length } = Object.keys(valuesToUpdate);
 
   let index = 0;
   let keyString = '';
 
-  for (const [key, value] of Object.entries(valuesToUpdate)) {
-    index++;
-    keyString += `${key} = \$${index}`
+  for (const [key] of Object.entries(valuesToUpdate)) {
+    index += 1;
+    keyString += `${key} = $${index}`;
     if (index === length) {
       break;
     }
-    keyString += `, ` 
+    keyString += ', ';
   }
 
-  const text = `UPDATE org_user SET ` + keyString + ` WHERE user_id = \$${index + 1} RETURNING *`;
+  const text = `UPDATE org_user SET ${keyString} WHERE user_id = $${index + 1} RETURNING *`;
   const values = Object.values(valuesToUpdate);
   values.push(userId);
-  
-  const { rows } = await db.query(text, values, "superAdmin");
+
+  const { rows } = await db.query(text, values, 'superAdmin');
 
   return rows[0];
 };
 
-const findOrg = async(orgName) => {
-  const text = "SELECT * FROM org_details WHERE org_name = $1";
-  const { rows } = await db.query(text, [orgName], "superAdmin");
+const findOrg = async (orgName) => {
+  const text = 'SELECT * FROM org_details WHERE org_name = $1';
+  const { rows } = await db.query(text, [orgName], 'superAdmin');
   return rows[0];
 };
 

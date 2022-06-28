@@ -2,7 +2,7 @@ const {
   getPlanService,
   createPlanService,
   updatePlanService,
-} = require("./subscriptionPlanService");
+} = require('./subscriptionPlanService');
 
 const getAll = async (req, res) => {
   const plans = await getPlanService();
@@ -14,11 +14,11 @@ const createPlan = async (req, res) => {
 
   try {
     const newPlan = await createPlanService(values);
-    res.status(201).json(newPlan);
+    return res.status(201).json(newPlan);
   } catch (err) {
     return res
       .status(500)
-      .json({ error: "new plan could not be added, try again later." });
+      .json({ error: 'new plan could not be added, try again later.' });
   }
 };
 
@@ -31,17 +31,16 @@ const updatePlan = async (req, res) => {
     plan_cost_inr: body.plan_cost_inr,
   };
 
-  const plan_id = req.params.id;
+  const planId = req.params.id;
 
-  const updatedPlan = await updatePlanService(plan_id, plan);
+  const updatedPlan = await updatePlanService(planId, plan);
 
-  if (updatedPlan) {
-    res.json(updatedPlan);
-  } else {
+  if (!updatedPlan) {
     return res.status(404).json({
       error: "plan already deleted or doesn't exist",
     });
   }
+  return res.json(updatedPlan);
 };
 
 module.exports = { getAll, createPlan, updatePlan };

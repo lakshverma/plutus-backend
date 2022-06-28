@@ -1,16 +1,14 @@
-const db = require("../../common/db/index");
+const db = require('../../common/db/index');
 
 // Allows searching a user by user_id (uuid v4 type) or email.
 // By default, the function accepts email ids as unique identifiers.
-const findUser = async (userIdentifier, identifierType = "email") => {
-  if (identifierType === "user_id") {
-    const text =
-      "SELECT org_user.*, user_roles.role_type FROM org_user JOIN user_roles ON (org_user.user_roles_user_roles_id = user_roles.user_roles_id) WHERE user_id = $1";
+const findUser = async (userIdentifier, identifierType = 'email') => {
+  if (identifierType === 'user_id') {
+    const text = 'SELECT org_user.*, user_roles.role_type FROM org_user JOIN user_roles ON (org_user.user_roles_user_roles_id = user_roles.user_roles_id) WHERE user_id = $1';
     const { rows } = await db.query(text, [userIdentifier]);
     return rows[0];
   }
-  const text =
-    "SELECT org_user.*, user_roles.role_type FROM org_user JOIN user_roles ON (org_user.user_roles_user_roles_id = user_roles.user_roles_id) WHERE email = $1";
+  const text = 'SELECT org_user.*, user_roles.role_type FROM org_user JOIN user_roles ON (org_user.user_roles_user_roles_id = user_roles.user_roles_id) WHERE email = $1';
   const { rows } = await db.query(text, [userIdentifier]);
   return rows[0];
 };
@@ -36,28 +34,27 @@ const createUser = async (userValues) => {
 };
 
 const updateUser = async (userId, valuesToUpdate) => {
-  const length = Object.keys(valuesToUpdate).length;
+  const { length } = Object.keys(valuesToUpdate);
 
   let index = 0;
-  let keyString = "";
+  let keyString = '';
 
-  for (const [key, value] of Object.entries(valuesToUpdate)) {
-    index++;
-    keyString += `${key} = \$${index}`;
+  for (const [key] of Object.entries(valuesToUpdate)) {
+    index += 1;
+    keyString += `${key} = $${index}`;
     if (index === length) {
       break;
     }
-    keyString += `, `;
+    keyString += ', ';
   }
 
-  const text =
-    `UPDATE org_user SET ` +
-    keyString +
-    ` WHERE user_id = \$${index + 1} RETURNING *`;
+  const text = `UPDATE org_user SET ${
+    keyString
+  } WHERE user_id = $${index + 1} RETURNING *`;
   const values = Object.values(valuesToUpdate);
   values.push(userId);
 
-  const { rows } = await db.query(text, values, "superAdmin");
+  const { rows } = await db.query(text, values, 'superAdmin');
 
   return rows[0];
 };

@@ -1,35 +1,35 @@
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const {
   createUserService,
   verifyUserService,
   checkExistingUserService,
   checkExistingTenantService,
   sendWelcomeEmailService,
-} = require("./authService");
+} = require('./authService');
 
 const loginRoot = async (req, res) => {
   const { body } = req;
 
   if (
     !(
-      body.username === process.env.ROOT_USER &&
-      body.password === process.env.ROOT_PASSWORD
+      body.username === process.env.ROOT_USER
+      && body.password === process.env.ROOT_PASSWORD
     )
   ) {
     return res.status(401).json({
-      error: "invalid username or password",
+      error: 'invalid username or password',
     });
   }
 
   const userForToken = {
     username: process.env.ROOT_USER,
-    role: "root",
+    role: 'root',
   };
 
   const token = jwt.sign(userForToken, process.env.SECRET);
 
-  res.status(200).send({ token });
+  return res.status(200).send({ token });
 };
 
 const createSuperAdmin = async (req, res) => {
@@ -38,33 +38,32 @@ const createSuperAdmin = async (req, res) => {
 
   if (existingUser) {
     return res.status(409).json({
-      error: "user already exists, try signing in or use another email id.",
+      error: 'user already exists, try signing in or use another email id.',
     });
   }
 
-  const newSuperAdmin = await createUserService(body, "superadmin");
+  const newSuperAdmin = await createUserService(body, 'superadmin');
 
-  res.status(201).json(newSuperAdmin);
+  return res.status(201).json(newSuperAdmin);
 };
 
 const loginSuperAdmin = async (req, res) => {
   const { body } = req;
 
   const user = await checkExistingUserService(body.email);
-  const passwordCorrect =
-    user === null
-      ? false
-      : await bcrypt.compare(body.password, user.password_hash);
+  const passwordCorrect = user === null
+    ? false
+    : await bcrypt.compare(body.password, user.password_hash);
 
   if (!(user && passwordCorrect)) {
     return res.status(401).json({
-      error: "invalid username or password",
+      error: 'invalid username or password',
     });
   }
 
   if (!(user.user_roles_user_roles_id === 1)) {
     return res.status(401).json({
-      error: "not authorized to access this route",
+      error: 'not authorized to access this route',
     });
   }
 
@@ -72,12 +71,12 @@ const loginSuperAdmin = async (req, res) => {
     orgId: user.org_id,
     userId: user.user_id,
     email: user.email,
-    role: "superadmin",
+    role: 'superadmin',
   };
 
   const token = jwt.sign(userForToken, process.env.SECRET);
 
-  res.status(200).send({ token });
+  return res.status(200).send({ token });
 };
 
 // Creates a new tenant and an admin user for the tenant.
@@ -89,34 +88,32 @@ const createTenant = async (req, res) => {
   const existingTenant = await checkExistingTenantService(body.orgName);
 
   // Case 1: Both Org and User exist
-  // Solution: Return an error with 409 code with a message that tells to use a different org and email
-  // or, login if the user owns the account.
+  // Solution: Return an error with 409 code with a message that tells to use
+  // a different org and email or, login if the user owns the account.
   if (existingTenant && existingUser) {
     return res.status(409).json({
-      error: "User already exists, try signing in or use another email id.",
+      error: 'User already exists, try signing in or use another email id.',
     });
   }
   // Case 2: Org doesn't exists but the user exists
   // Solution: Return an error with 409 code with a message that asks user to use another email
-  else if (!existingTenant && existingUser) {
+  if (!existingTenant && existingUser) {
     return res.status(409).json({
-      error: "User already exists, try signing in or use another email id.",
+      error: 'User already exists, try signing in or use another email id.',
     });
   }
   // Case 3: Org exists but the user doesn't exist.
   // Solution: Create a user with admin role within the existing org
-  else if (existingTenant && !existingUser) {
-    const newTenantAdmin = await createUserService(body, "admin");
+  if (existingTenant && !existingUser) {
+    const newTenantAdmin = await createUserService(body, 'admin');
     await sendWelcomeEmailService(newTenantAdmin);
     return res.status(201).json(newTenantAdmin);
   }
   // Case 4: Neither org nor user exists.
   // Solution: Create an org and a user with admin role in the newly created org
-  else {
-    const newTenantAdmin = await createUserService(body, "admin");
-    await sendWelcomeEmailService(newTenantAdmin);
-    return res.status(201).json(newTenantAdmin);
-  }
+  const newTenantAdmin = await createUserService(body, 'admin');
+  await sendWelcomeEmailService(newTenantAdmin);
+  return res.status(201).json(newTenantAdmin);
 };
 
 // Triggers the email confirmation flow. Used when user signs up but doesn't verify before
@@ -126,22 +123,23 @@ const confirmEmail = async (req, res) => {
   const existingUser = await checkExistingUserService(body.email);
   if (!existingUser) {
     return res.status(404).json({
-      error: "User does not exist.",
+      error: 'User does not exist.',
     });
   }
 
-  if (existingUser.status === "verified") {
+  if (existingUser.status === 'verified') {
     return res.status(409).json({
       error:
-        "User already verified, try logging in with the correct credentials.",
+        'User already verified, try logging in with the correct credentials.',
     });
   }
 
   await sendWelcomeEmailService(existingUser);
-  res.status(204).end();
+  return res.status(204).end();
 };
 
-// Verify user account using email decoded from the JWT token generated by createTenant, createUser or confirmEmail controllers.
+// Verify user account using email decoded from the JWT token generated
+// by createTenant, createUser or confirmEmail controllers.
 const verifyUser = async (req, res) => {
   const { params } = req;
   const secret = process.env.SECRET;
@@ -149,7 +147,7 @@ const verifyUser = async (req, res) => {
 
   const foundUser = await checkExistingUserService(
     decodedToken.user_id,
-    "user_id"
+    'user_id',
   );
 
   if (!foundUser) {
@@ -163,7 +161,7 @@ const verifyUser = async (req, res) => {
       error: "Couldn't verify the user. Please try again later.",
     });
   }
-  res.status(200).json({
+  return res.status(200).json({
     status: verifiedUser,
   });
 };

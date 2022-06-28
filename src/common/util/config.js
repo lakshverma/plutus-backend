@@ -1,4 +1,6 @@
-require("dotenv").config();
+/* eslint-disable no-nested-ternary */
+/* eslint-disable camelcase */
+require('dotenv').config();
 
 const production_pg_info = null;
 const dev_pg_info = {
@@ -22,28 +24,26 @@ const dev_tenant_info = {
 
 const test_tenant_info = null;
 
-const PG_CONNECTION_OBJ =
-  process.env.NODE_ENV === "test"
-    ? test_pg_info
-    : process.env.NODE_ENV === "development"
+const PG_CONNECTION_OBJ = process.env.NODE_ENV === 'test'
+  ? test_pg_info
+  : process.env.NODE_ENV === 'development'
     ? dev_pg_info
-    : process.env.NODE_ENV === "production"
-    ? production_pg_info
-    : null;
+    : process.env.NODE_ENV === 'production'
+      ? production_pg_info
+      : null;
 
-const PG_TENANT_CONNECTION_OBJ =
-  process.env.NODE_ENV === "test"
-    ? test_tenant_info
-    : process.env.NODE_ENV === "development"
+const PG_TENANT_CONNECTION_OBJ = process.env.NODE_ENV === 'test'
+  ? test_tenant_info
+  : process.env.NODE_ENV === 'development'
     ? dev_tenant_info
-    : process.env.NODE_ENV === "production"
-    ? production_tenant_info
-    : null;
+    : process.env.NODE_ENV === 'production'
+      ? production_tenant_info
+      : null;
 
 const TENANT_CONTEXT = {
-  orgId: "",
+  orgId: '',
   get tenantInfo() {
-    return String(orgId);
+    return String(TENANT_CONTEXT.orgId);
   },
   set tenantInfo(uuid) {
     this.orgId = uuid;

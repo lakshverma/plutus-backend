@@ -1,15 +1,16 @@
-const bcrypt = require("bcrypt");
-const dal = require("./authDAL");
-const logger = require("../../common/util/logger");
-const jwt = require("jsonwebtoken");
-var { SendMailClient } = require("zeptomail");
-const { ZEPTOMAIL_CONFIG } = require("../../common/util/config");
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+// eslint-disable-next-line no-var
+var { SendMailClient } = require('zeptomail');
+const dal = require('./authDAL');
+const logger = require('../../common/util/logger');
+const { ZEPTOMAIL_CONFIG } = require('../../common/util/config');
 
-const createUserService = async (values, role = "admin") => {
+const createUserService = async (values, role = 'admin') => {
   const saltRounds = 10;
   const passwordHash = await bcrypt.hash(values.password, saltRounds);
 
-  if (role === "superadmin") {
+  if (role === 'superadmin') {
     const userValues = [
       values.firstName,
       values.middleName || null,
@@ -17,18 +18,19 @@ const createUserService = async (values, role = "admin") => {
       values.email,
       values.username,
       passwordHash,
-      "superadmin",
-      "Manager",
-      "active",
+      'superadmin',
+      'Manager',
+      'active',
     ];
 
-    // All superadmins are added as users with a superadmin role in a fictitious org called Dunder Mifflin.
+    // All superadmins are added as users with a superadmin role in a
+    // fictitious org called Dunder Mifflin.
     const orgValues = [
-      "Dunder Mifflin",
-      "10-50",
-      "www.dunder-mifflin.com/",
-      "Sambar",
-      "active",
+      'Dunder Mifflin',
+      '10-50',
+      'www.dunder-mifflin.com/',
+      'Sambar',
+      'active',
     ];
 
     const newUser = await dal.createUser(userValues, orgValues);
@@ -47,7 +49,8 @@ const createUserService = async (values, role = "admin") => {
     return newUserWithoutPassword;
   }
 
-  // User status is set to unverified by default. It is set to active once email confirmation is successful.
+  // User status is set to unverified by default. It is set to active once
+  // email confirmation is successful.
   const userValues = [
     values.firstName,
     values.middleName,
@@ -57,15 +60,15 @@ const createUserService = async (values, role = "admin") => {
     passwordHash,
     role,
     values.jobTitle,
-    "unverified",
+    'unverified',
   ];
 
   const orgValues = [
     values.orgName,
     values.orgSize,
     values.orgWebsite,
-    "Bushpig",
-    "active",
+    'Bushpig',
+    'active',
   ];
 
   const newUser = await dal.createUser(userValues, orgValues);
@@ -85,32 +88,33 @@ const createUserService = async (values, role = "admin") => {
 };
 
 // Supports finding the user by uuid as well as email since both are unique identifiers.
-// This is because this service is used in a variety of contexts where only one of the identifiers might be available.
+// This is because this service is used in a variety of contexts where only one of the
+// identifiers might be available.
 const checkExistingUserService = async (
   userIdentifier,
-  identifierType = "email"
+  identifierType = 'email',
 ) => {
   const user = await dal.findUser(userIdentifier, identifierType);
-  return user ? user : null;
+  return user || null;
 };
 
 const checkExistingTenantService = async (orgName) => {
   const org = await dal.findOrg(orgName);
-  return org ? org : null;
+  return org || null;
 };
 
 const sendWelcomeEmailService = async (userDetails) => {
-  const url = ZEPTOMAIL_CONFIG.url;
-  const token = ZEPTOMAIL_CONFIG.signup.token;
+  const { url } = ZEPTOMAIL_CONFIG;
+  const { token } = ZEPTOMAIL_CONFIG.signup;
 
-  let client = new SendMailClient({ url, token });
+  const client = new SendMailClient({ url, token });
 
   const userForJwtToken = {
     user_id: userDetails.user_id,
   };
 
   const jwtToken = jwt.sign(userForJwtToken, process.env.SECRET, {
-    expiresIn: "12h",
+    expiresIn: '12h',
   });
 
   client
@@ -144,7 +148,7 @@ const sendWelcomeEmailService = async (userDetails) => {
 };
 
 const verifyUserService = async (id) => {
-  const user = await checkExistingUserService(id, "user_id");
+  const user = await checkExistingUserService(id, 'user_id');
   if (!user) {
     logger.info(`Value of user - VerifyUserService: ${user}`);
     return null;
@@ -157,7 +161,7 @@ const verifyUserService = async (id) => {
     username: user.username,
     user_roles_user_roles_id: user.user_roles_user_roles_id,
     job_title: user.job_title,
-    status: "verified",
+    status: 'verified',
   };
   const verifiedUser = await dal.updateUser(id, userToVerify);
   const verificationStatus = verifiedUser.status;

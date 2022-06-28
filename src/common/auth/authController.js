@@ -1,10 +1,10 @@
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
 const {
   checkExistingUserService,
   sendPassResetEmailService,
   resetPasswordService,
   resetPasswordConfirmService,
-} = require("./authService");
+} = require('./authService');
 
 // Triggers the password reset flow.
 const requestPasswordReset = async (req, res) => {
@@ -17,7 +17,7 @@ const requestPasswordReset = async (req, res) => {
   }
 
   await sendPassResetEmailService(existingUser);
-  res.status(204).end();
+  return res.status(204).end();
 };
 
 // Verifies token sent to user's email before generating a short-lived token to allow password reset
@@ -29,7 +29,7 @@ const resetPasswordEmailConfirm = async (req, res) => {
 
   const foundUser = await checkExistingUserService(
     decodedToken.user_id,
-    "user_id"
+    'user_id',
   );
 
   if (!foundUser) {
@@ -46,7 +46,7 @@ const resetPasswordEmailConfirm = async (req, res) => {
     expiresIn: 300,
   });
 
-  res.status(200).send({ token });
+  return res.status(200).send({ token });
 };
 
 const resetPassword = async (req, res) => {
@@ -56,7 +56,7 @@ const resetPassword = async (req, res) => {
 
   const foundUser = await checkExistingUserService(
     decodedToken.canSetPasswordForUser,
-    "user_id"
+    'user_id',
   );
 
   if (!foundUser) {
@@ -75,7 +75,7 @@ const resetPassword = async (req, res) => {
 
   await resetPasswordConfirmService(updatedUser);
 
-  res.status(204).end();
+  return res.status(204).end();
 };
 
 module.exports = {

@@ -1,22 +1,22 @@
-const bcrypt = require("bcrypt");
-const dal = require("./authDAL");
-const logger = require("../util/logger");
-const jwt = require("jsonwebtoken");
-var { SendMailClient } = require("zeptomail");
-const { ZEPTOMAIL_CONFIG } = require("../util/config");
-
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+// eslint-disable-next-line no-var
+var { SendMailClient } = require('zeptomail');
+const dal = require('./authDAL');
+const logger = require('../util/logger');
+const { ZEPTOMAIL_CONFIG } = require('../util/config');
 
 const checkExistingUserService = async (
   userIdentifier,
-  identifierType = "email"
+  identifierType = 'email',
 ) => {
   const user = await dal.findUser(userIdentifier, identifierType);
-  return user ? user : null;
+  return user || null;
 };
 
 const sendPassResetEmailService = async (userDetails) => {
-  const url = ZEPTOMAIL_CONFIG.url;
-  const token = ZEPTOMAIL_CONFIG.recover.token;
+  const { url } = ZEPTOMAIL_CONFIG;
+  const { token } = ZEPTOMAIL_CONFIG.recover;
 
   const userForJwtToken = {
     user_id: userDetails.user_id,
@@ -26,7 +26,7 @@ const sendPassResetEmailService = async (userDetails) => {
     expiresIn: 600,
   });
 
-  let client = new SendMailClient({ url, token });
+  const client = new SendMailClient({ url, token });
 
   client
     .sendMailWithTemplate({
@@ -80,10 +80,10 @@ const resetPasswordService = async (userDetails, passwordToUpdate) => {
 };
 
 const resetPasswordConfirmService = async (userDetails) => {
-  const url = ZEPTOMAIL_CONFIG.url;
-  const token = ZEPTOMAIL_CONFIG.recover.token;
+  const { url } = ZEPTOMAIL_CONFIG;
+  const { token } = ZEPTOMAIL_CONFIG.recover;
 
-  let client = new SendMailClient({ url, token });
+  const client = new SendMailClient({ url, token });
 
   client
     .sendMailWithTemplate({
