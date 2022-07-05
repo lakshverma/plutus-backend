@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 const { TENANT_CONTEXT } = require('../../common/util/config');
 
 const {
@@ -30,42 +29,6 @@ const createUser = async (req, res) => {
   const newUser = await createUserService(newUserDetailsWithOrg);
   await sendWelcomeEmailService(newUser);
   return res.status(201).json(newUser);
-};
-
-const login = async (req, res) => {
-  const { body } = req;
-  const user = await checkExistingUserService(body.email);
-
-  const passwordCorrect = user === null
-    ? false
-    : await bcrypt.compare(body.password, user.password_hash);
-
-  if (!(user && passwordCorrect)) {
-    return res.status(401).json({
-      error: 'invalid username or password',
-    });
-  }
-
-  if (user.status === 'unverified') {
-    return res.status(401).json({
-      error:
-        'Account is not verified. Complete email verification to access the account.',
-    });
-  }
-
-  const userForToken = {
-    orgId: user.org_id,
-    userId: user.user_id,
-    email: user.email,
-    // Role be an int related to primary key in user_roles_id table, convert it into a role name
-    role: user.role_type,
-  };
-
-  const token = jwt.sign(userForToken, process.env.SECRET, {
-    expiresIn: '16h',
-  });
-
-  return res.status(200).send({ token });
 };
 
 // Triggers the email confirmation flow. Used when user signs up but doesn't verify before
@@ -120,7 +83,6 @@ const verifyUser = async (req, res) => {
 
 module.exports = {
   createUser,
-  login,
   confirmEmail,
   verifyUser,
 };

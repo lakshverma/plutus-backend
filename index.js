@@ -1,7 +1,7 @@
-const app = require("./src/app");
-const http = require("http");
-const { PORT } = require("./src/common/util/config");
-const logger = require("./src/common/util/logger");
+const http = require('http');
+const app = require('./src/app');
+const { PORT } = require('./src/common/util/config');
+const logger = require('./src/common/util/logger');
 
 const server = http.createServer(app);
 
