@@ -32,15 +32,15 @@ const login = async (req, res) => {
     orgId: user.org_id,
     userId: user.user_id,
     email: user.email,
-    // Role be an int related to primary key in user_roles_id table, convert it into a role name
-    role: user.role_type,
+    // Role is an int related to primary key in user_roles_id table
+    role: user.user_roles_user_roles_id,
   };
 
   const token = jwt.sign(userForToken, process.env.SECRET, {
     expiresIn: '16h',
   });
 
-  return res.status(200).send({ token });
+  return res.status(200).send({ token, role: user.user_roles_user_roles_id });
 };
 
 // Triggers the password reset flow.
@@ -55,35 +55,6 @@ const requestPasswordReset = async (req, res) => {
 
   await sendPassResetEmailService(existingUser);
   return res.status(204).end();
-};
-
-// Verifies token sent to user's email before generating a short-lived token to allow password reset
-const resetPasswordEmailConfirm = async (req, res) => {
-  const { params } = req;
-
-  const secret = process.env.SECRET;
-  const decodedToken = jwt.verify(params.token, secret);
-
-  const foundUser = await checkExistingUserService(
-    decodedToken.user_id,
-    'user_id',
-  );
-
-  if (!foundUser) {
-    return res.status(404).json({
-      error: "User doesn't exist",
-    });
-  }
-
-  const userForToken = {
-    canSetPasswordForUser: foundUser.user_id,
-  };
-
-  const token = jwt.sign(userForToken, process.env.SECRET, {
-    expiresIn: 300,
-  });
-
-  return res.status(200).send({ token });
 };
 
 const resetPassword = async (req, res) => {
@@ -118,6 +89,5 @@ const resetPassword = async (req, res) => {
 module.exports = {
   login,
   requestPasswordReset,
-  resetPasswordEmailConfirm,
   resetPassword,
 };

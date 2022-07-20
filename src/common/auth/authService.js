@@ -17,9 +17,8 @@ const checkExistingUserService = async (
 const sendPassResetEmailService = async (userDetails) => {
   const { url } = ZEPTOMAIL_CONFIG;
   const { token } = ZEPTOMAIL_CONFIG.recover;
-
   const userForJwtToken = {
-    user_id: userDetails.user_id,
+    canSetPasswordForUser: userDetails.user_id,
   };
 
   const jwtToken = jwt.sign(userForJwtToken, process.env.SECRET, {
