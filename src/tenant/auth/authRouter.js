@@ -7,11 +7,13 @@ const {
   confirmEmail,
 } = require('./authController');
 
+const { ROLES } = require('../../common/util/helper');
+
 const router = new Router();
 
 router.post(
   '/signup',
-  [authorize(['root', 'superadmin', 'admin']), validateUserSignup],
+  [authorize(['root', ROLES.superAdmin, ROLES.admin]), validateUserSignup],
   createUser,
 );
 

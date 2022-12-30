@@ -42,11 +42,18 @@ const PG_TENANT_CONNECTION_OBJ = process.env.NODE_ENV === 'test'
 
 const TENANT_CONTEXT = {
   orgId: '',
+  userId: '',
   get tenantInfo() {
-    return String(TENANT_CONTEXT.orgId);
+    return String(this.orgId);
   },
   set tenantInfo(uuid) {
     this.orgId = uuid;
+  },
+  get userInfo() {
+    return String(this.userId);
+  },
+  set userInfo(uuid) {
+    this.userId = uuid;
   },
 };
 

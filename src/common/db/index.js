@@ -34,9 +34,13 @@ const query = async (text, params, mode = 'tenant') => {
     // Set tenant id as context for current_setting function in postgres. This enforces the
     // Row level security policy based on tenant id.
     // The variable is valid for a db session (unless reassigned)
-    await pool.query('SET app.current_tenant = $1', [
-      TENANT_CONTEXT.tenantInfo,
-    ]);
+    const setTenantQuery = `SET app.current_tenant = '${TENANT_CONTEXT.tenantInfo}'`;
+    await pool.query(setTenantQuery);
+
+    const setTenantUserQuery = `SET app.current_userid = '${TENANT_CONTEXT.userInfo}'`;
+    await pool.query(setTenantUserQuery);
+
+    logger.info('tenant context has been successfully set');
   }
 
   const start = Date.now();

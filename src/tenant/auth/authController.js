@@ -10,8 +10,8 @@ const {
 
 const createUser = async (req, res) => {
   const { body, user } = req;
-
   TENANT_CONTEXT.tenantInfo = user.orgId;
+  TENANT_CONTEXT.userInfo = user.userId;
 
   const existingUser = await checkExistingUserService(body.email);
 
