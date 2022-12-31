@@ -70,13 +70,15 @@ const getClient = async (mode = 'tenant') => {
 
   const client = await pool.connect();
 
-  // Set tenant id as context for current_setting function in postgres. This enforces
+  // Set tenant id and user id as context for current_setting function in postgres. This enforces
   // the Row level security policy based on tenant id.
   // The variable is valid for a db session (unless reassigned)
   if (mode === 'tenant') {
-    await client.query('SET app.current_tenant = $1', [
-      TENANT_CONTEXT.tenantInfo,
-    ]);
+    const setTenantQuery = `SET app.current_tenant = '${TENANT_CONTEXT.tenantInfo}'`;
+    await client.query(setTenantQuery);
+
+    const setTenantUserQuery = `SET app.current_userid = '${TENANT_CONTEXT.userInfo}'`;
+    await client.query(setTenantUserQuery);
   }
   // The variable name is 'originalQuery' because 'query' is already defined in upper scope.
   const originalQuery = client.query;
