@@ -54,13 +54,13 @@ const query = async (text, params, mode = 'tenant') => {
 
 // Gets a client from the pool to run several queries a row as a transaction.
 // The function also provides basic diagnostic information (last executed query)
-// if client is idle for > 5 seconds so that any leaks can be tracked down.
+// if client is idle for > 5 seconds, so that any leaks can be tracked down.
 // NOTE: Tenant mode needs to be tested more extensively for bugs and edge cases
 // before it is utilized by tenant routes
 const getClient = async (mode = 'tenant') => {
   let pool = null;
 
-  // Conditionally change PG_CONNECTION_OBJ based on whether the user connecting
+  // Conditionally change PG_CONNECTION_OBJ based on whether the connecting user
   // is tenant or superadmin
   if ((mode === 'superAdmin')) {
     pool = new Pool(PG_CONNECTION_OBJ);

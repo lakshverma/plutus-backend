@@ -6,6 +6,7 @@ const {
   resetPasswordService,
   resetPasswordConfirmService,
 } = require('./authService');
+const { TENANT_CONTEXT } = require('../util/config');
 
 const login = async (req, res) => {
   const { body } = req;
@@ -39,6 +40,9 @@ const login = async (req, res) => {
   const token = jwt.sign(userForToken, process.env.SECRET, {
     expiresIn: '16h',
   });
+
+  TENANT_CONTEXT.tenantInfo = user.org_id;
+  TENANT_CONTEXT.userInfo = user.user_id;
 
   return res.status(200).send({ token, role: user.user_roles_user_roles_id });
 };
