@@ -25,6 +25,7 @@ const search = async (searchQuery) => {
         contact.contact_id::text AS resource_id,
         contact.first_name || ' ' || contact.last_name AS result_title,
         contact.personal_email || ' ' || COALESCE(contact.work_email, '') AS result_desc,
+        NULL AS create_timestamp,
         1 AS orderpriority,
         rank,
         similarity
@@ -49,6 +50,7 @@ UNION ALL
         note.note_id::text AS resource_id,
         contact.first_name || ' ' || contact.last_name AS result_title,
         note.note_description AS result_desc,
+        note.note_create_timestamp AS create_timestamp,
         2 AS orderpriority,
         rank,
         similarity
@@ -67,8 +69,9 @@ UNION ALL
     SELECT
         'email' AS type,
         email.email_id::text AS resource_id,
-        email.email_creator_user_id || ' ' || email.email_create_timestamp AS result_title,
+        (SELECT org_user.first_name || ' ' || org_user.last_name FROM org_user JOIN email ON email.email_creator_user_id = org_user.user_id LIMIT 1) AS result_title,
         email.email_description AS result_desc,
+        email.email_create_timestamp AS create_timestamp,
         2 AS orderpriority,
         rank,
         similarity
@@ -89,6 +92,7 @@ UNION ALL
         meeting.meeting_id::text AS resource_id,
         contact.first_name || ' ' || contact.last_name AS result_title,
         meeting.meeting_description AS result_desc,
+        meeting.meeting_create_timestamp AS create_timestamp,
         2 AS orderpriority,
         rank,
         similarity
@@ -109,6 +113,7 @@ UNION ALL
         task_id::text AS resource_id,
         task_name AS result_title,
         task_description AS result_desc,
+        task.task_create_timestamp AS create_timestamp,
         2 AS orderpriority,
         rank,
         similarity
@@ -130,7 +135,7 @@ ORDER BY
 LIMIT 10;
   `;
   const { rows } = await db.query(text, [searchQuery]);
-  return rows[0];
+  return rows;
 };
 
 module.exports = {
