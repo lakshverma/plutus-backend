@@ -43,8 +43,8 @@ const login = async (req, res) => {
 
   TENANT_CONTEXT.tenantInfo = user.org_id;
   TENANT_CONTEXT.userInfo = user.user_id;
-
-  return res.status(200).send({ token, role: user.user_roles_user_roles_id });
+  return res.status(200)
+    .send({ token, role: user.user_roles_user_roles_id, tenant: user.org_id });
 };
 
 // Triggers the password reset flow.
