@@ -9,6 +9,10 @@ const dev_pg_info = {
   database: process.env.DEV_PGDATABASE,
   password: process.env.DEV_PGPASSWORD,
   port: process.env.PGPORT,
+  ssl: {
+    rejectUnauthorized: false,
+    ca: process.env.DEV_PG_CA,
+  },
 };
 const test_pg_info = null;
 
@@ -20,6 +24,10 @@ const dev_tenant_info = {
   database: process.env.DEV_PGDATABASE,
   password: process.env.DEV_TENANTPASSWORD,
   port: process.env.PGPORT,
+  ssl: {
+    rejectUnauthorized: false,
+    ca: process.env.DEV_PG_CA,
+  },
 };
 
 const test_tenant_info = null;
@@ -40,6 +48,8 @@ const PG_TENANT_CONNECTION_OBJ = process.env.NODE_ENV === 'test'
       ? production_tenant_info
       : null;
 
+// In the current implementation if the user is logged in and the app restarts,
+// the tenant context is not automatically reset. Need to think how to overcome this.
 const TENANT_CONTEXT = {
   orgId: '',
   userId: '',
