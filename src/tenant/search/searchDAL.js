@@ -24,7 +24,7 @@ const search = async (searchQuery) => {
         'contact' AS type,
         contact.contact_id::text AS resource_id,
         contact.first_name || ' ' || contact.last_name AS result_title,
-        contact.personal_email || ' ' || COALESCE(contact.work_email, '') AS result_desc,
+        contact.email || ' ' || COALESCE(contact.correspondence_email, '') AS result_desc,
         NULL AS create_timestamp,
         1 AS orderpriority,
         rank,
@@ -34,10 +34,13 @@ const search = async (searchQuery) => {
         to_tsvector(contact.first_name || ' ' || contact.last_name) AS document,
         to_tsquery($1) AS query,
         NULLIF(ts_rank(document, query), 0) AS rank,
-        SIMILARITY($1, contact.first_name || contact.last_name || contact.personal_email || contact.work_email) similarity
+        SIMILARITY($1, contact.first_name || contact.last_name || contact.email || contact.correspondence_email) similarity
     WHERE
-        document @@ query
-        OR similarity > 0
+        contact.is_active = TRUE 
+        AND (
+            document @@ query
+            OR similarity > 0
+        )
     ORDER BY
       rank DESC NULLS LAST,
         similarity DESC NULLS LAST
@@ -61,8 +64,11 @@ UNION ALL
         NULLIF(ts_rank(document, query), 0) AS rank,
         SIMILARITY($1, note.note_description) similarity
     WHERE
+    contact.is_active = TRUE 
+    AND (
         document @@ query
         OR similarity > 0
+    )
 )
 UNION ALL
 (
@@ -76,20 +82,23 @@ UNION ALL
         rank,
         similarity
     FROM
-        email,
+        email JOIN contact on email.contact_id = contact.contact_id,
         to_tsvector(email.email_description) AS document,
         to_tsquery($1) AS query,
         NULLIF(ts_rank(document, query), 0) AS rank,
         SIMILARITY($1, email.email_description) similarity
     WHERE
-        document @@ query
-        OR similarity > 0
+        contact.is_active = TRUE 
+        AND (
+            document @@ query
+            OR similarity > 0
+        )
 )
 UNION ALL
 (
   SELECT
         'meeting' AS type,
-        meeting.meeting_id::text AS resource_id,
+        meeting.meeting_id::text AS resource_id, 
         contact.first_name || ' ' || contact.last_name AS result_title,
         meeting.meeting_description AS result_desc,
         meeting.meeting_create_timestamp AS create_timestamp,
@@ -103,8 +112,11 @@ UNION ALL
         NULLIF(ts_rank(document, query), 0) AS rank,
         SIMILARITY($1, meeting.meeting_description) similarity
     WHERE
-        document @@ query
-        OR similarity > 0
+        contact.is_active = TRUE 
+        AND (
+            document @@ query
+            OR similarity > 0
+        )
 )
 UNION ALL
 (
@@ -118,14 +130,17 @@ UNION ALL
         rank,
         similarity
     FROM
-        task,
+        task JOIN contact ON task.contact_id = contact.contact_id,
         to_tsvector(task.task_name || ' ' || task.task_description) AS document,
         to_tsquery($1) AS query,
         NULLIF(ts_rank(document, query), 0) AS rank,
         SIMILARITY($1, task.task_name || task.task_description) similarity
     WHERE
-        document @@ query
-        OR similarity > 0
+        contact.is_active = TRUE 
+        AND (
+            document @@ query
+            OR similarity > 0
+        )
 )
 
 ORDER BY
