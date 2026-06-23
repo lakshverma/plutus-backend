@@ -1,6 +1,7 @@
 const jwt = require('express-jwt');
 const { validationResult } = require('express-validator');
 const logger = require('./logger');
+const { TENANT_CONTEXT } = require('./config');
 
 // See if this middleware can be clubbed with errorHandler middleware.
 const validationMiddleware = (req, res, next) => {
@@ -27,6 +28,11 @@ const authorize = (roles = []) => {
         // user's role is not authorized
         return res.status(401).json({ error: 'Unauthorized' });
       }
+      // Establish the per-request tenant context from the verified token so every
+      // authenticated route has it set (tenant-mode db.query relies on it for RLS).
+      // Harmless for superAdmin routes, which use superAdmin DB mode.
+      TENANT_CONTEXT.tenantInfo = req.user.orgId || '';
+      TENANT_CONTEXT.userInfo = req.user.userId || '';
       return next();
     },
   ];

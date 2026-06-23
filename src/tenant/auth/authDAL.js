@@ -5,11 +5,11 @@ const db = require('../../common/db/index');
 const findUser = async (userIdentifier, identifierType = 'email') => {
   if (identifierType === 'user_id') {
     const text = 'SELECT org_user.*, user_roles.role_type FROM org_user JOIN user_roles ON (org_user.user_roles_user_roles_id = user_roles.user_roles_id) WHERE user_id = $1';
-    const { rows } = await db.query(text, [userIdentifier]);
+    const { rows } = await db.query(text, [userIdentifier], 'superAdmin');
     return rows[0];
   }
   const text = 'SELECT org_user.*, user_roles.role_type FROM org_user JOIN user_roles ON (org_user.user_roles_user_roles_id = user_roles.user_roles_id) WHERE email = $1';
-  const { rows } = await db.query(text, [userIdentifier]);
+  const { rows } = await db.query(text, [userIdentifier], 'superAdmin');
   return rows[0];
 };
 
