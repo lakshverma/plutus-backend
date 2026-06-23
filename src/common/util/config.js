@@ -1,6 +1,12 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable camelcase */
 require('dotenv').config();
+const { AsyncLocalStorage } = require('async_hooks');
+
+// Per-request store so concurrent requests never share tenant/user identity.
+// Each request runs inside tenantStorage.run({ orgId, userId }, ...) (see app.js),
+// and TENANT_CONTEXT reads/writes the current request's store rather than a global.
+const tenantStorage = new AsyncLocalStorage();
 
 const production_pg_info = null;
 const dev_pg_info = {
@@ -48,11 +54,27 @@ const PG_TENANT_CONNECTION_OBJ = process.env.NODE_ENV === 'test'
       ? production_tenant_info
       : null;
 
-// In the current implementation if the user is logged in and the app restarts,
-// the tenant context is not automatically reset. Need to think how to overcome this.
+// orgId/userId are backed by the per-request AsyncLocalStorage store, so each request
+// reads/writes its own tenant identity. The tenantInfo/userInfo accessors are unchanged.
+// Outside a request (e.g. module-load testConnection) the store is undefined and these
+// read as '' and ignore writes.
 const TENANT_CONTEXT = {
-  orgId: '',
-  userId: '',
+  get orgId() {
+    const store = tenantStorage.getStore();
+    return store ? store.orgId : '';
+  },
+  set orgId(value) {
+    const store = tenantStorage.getStore();
+    if (store) store.orgId = value;
+  },
+  get userId() {
+    const store = tenantStorage.getStore();
+    return store ? store.userId : '';
+  },
+  set userId(value) {
+    const store = tenantStorage.getStore();
+    if (store) store.userId = value;
+  },
   get tenantInfo() {
     return String(this.orgId);
   },
@@ -95,6 +117,7 @@ module.exports = {
   PG_CONNECTION_OBJ,
   PG_TENANT_CONNECTION_OBJ,
   TENANT_CONTEXT,
+  tenantStorage,
   ZEPTOMAIL_CONFIG,
   PORT,
 };

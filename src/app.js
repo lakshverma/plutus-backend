@@ -10,6 +10,7 @@ const {
 } = require('./common/util/middleware');
 const superAdminAppRoutes = require('./superAdmin/superAdminApp');
 const tenantAppRoutes = require('./tenant/tenantApp');
+const { tenantStorage } = require('./common/util/config');
 
 const app = express();
 
@@ -27,6 +28,10 @@ app.use(
 );
 
 app.use(tokenExtractor);
+
+// Open a fresh per-request store so tenant identity (TENANT_CONTEXT) is isolated
+// per request and never shared across concurrent requests.
+app.use((req, res, next) => tenantStorage.run({ orgId: '', userId: '' }, next));
 
 app.use('/superadmin', superAdminAppRoutes);
 app.use('/:tenantId', tenantAppRoutes);
