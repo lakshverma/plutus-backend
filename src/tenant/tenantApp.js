@@ -6,11 +6,13 @@ const callRouter = require('./activity/call/callRouter');
 const searchRouter = require('./search/searchRouter');
 const contactRouter = require('./contact/contactRouter');
 const auditRouter = require('./audit/auditRouter');
+const reportRouter = require('./report/reportRouter');
 
 const tenantAppRoutes = express.Router();
 
 tenantAppRoutes.use('/auth', authRouter);
 tenantAppRoutes.use('/search', searchRouter);
+tenantAppRoutes.use('/report', reportRouter);
 tenantAppRoutes.use('/activities', activitiesRouter);
 tenantAppRoutes.use('/contacts', contactRouter);
 tenantAppRoutes.use('/contacts/:contactId/activities', activitiesRouter);
