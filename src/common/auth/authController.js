@@ -37,14 +37,18 @@ const login = async (req, res) => {
     role: user.user_roles_user_roles_id,
   };
 
+  const tokenExpiry = body.remember === true ? '7d' : '16h';
+
   const token = jwt.sign(userForToken, process.env.SECRET, {
-    expiresIn: '16h',
+    expiresIn: tokenExpiry,
   });
 
   TENANT_CONTEXT.tenantInfo = user.org_id;
   TENANT_CONTEXT.userInfo = user.user_id;
   return res.status(200)
-    .send({ token, role: user.user_roles_user_roles_id, tenant: user.org_id });
+    .send({
+      token, role: user.user_roles_user_roles_id, tenant: user.org_id, email: user.email,
+    });
 };
 
 // Triggers the password reset flow.

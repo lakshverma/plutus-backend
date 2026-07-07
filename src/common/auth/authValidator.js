@@ -23,6 +23,12 @@ const validateLogin = [
     .notEmpty()
     .withMessage('password can not be empty.')
     .bail(),
+  check('remember')
+    .optional()
+    .isBoolean()
+    .withMessage('remember must be a boolean.')
+    .bail()
+    .toBoolean(),
 ];
 
 const validateResetPassword = [
