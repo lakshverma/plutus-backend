@@ -111,6 +111,28 @@ const ZEPTOMAIL_CONFIG = {
   },
 };
 
+const RESEND_API_KEY = process.env.NODE_ENV === 'production'
+  ? process.env.PROD_RESEND_API_KEY
+  : process.env.DEV_RESEND_API_KEY;
+
+const RESEND_CONFIG = {
+  apiKey: RESEND_API_KEY,
+  fromAddress: process.env.RESEND_FROM_ADDRESS || 'Plutus <onboarding@resend.dev>',
+  signupTemplateId: 'signup-confirmation',
+  passwordResetTemplateId: 'password-reset',
+  passwordResetSuccessTemplateId: 'password-reset-success',
+};
+
+// Backend API URL
+const APP_BASE_URL = process.env.NODE_ENV === 'production'
+  ? process.env.PROD_APP_BASE_URL
+  : (process.env.DEV_APP_BASE_URL || 'http://localhost:3003');
+
+// Frontend Client URL
+const CLIENT_BASE_URL = process.env.NODE_ENV === 'production'
+  ? process.env.PROD_CLIENT_BASE_URL
+  : (process.env.DEV_CLIENT_BASE_URL || 'http://localhost:3000');
+
 const PORT = process.env.PORT || 3001;
 
 module.exports = {
@@ -119,5 +141,8 @@ module.exports = {
   TENANT_CONTEXT,
   tenantStorage,
   ZEPTOMAIL_CONFIG,
+  RESEND_CONFIG,
+  APP_BASE_URL,
+  CLIENT_BASE_URL,
   PORT,
 };

@@ -1,10 +1,16 @@
+/* eslint-disable camelcase */
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 // eslint-disable-next-line no-var
-var { SendMailClient } = require('zeptomail');
+// var { SendMailClient } = require('zeptomail');
+const { Resend } = require('resend');
 const dal = require('./authDAL');
 const logger = require('../../common/util/logger');
-const { ZEPTOMAIL_CONFIG } = require('../../common/util/config');
+// const { ZEPTOMAIL_CONFIG } = require('../../common/util/config');
+const {
+  RESEND_CONFIG, // Changed config import
+  APP_BASE_URL,
+} = require('../../common/util/config');
 
 const createUserService = async (values, role = 'admin') => {
   const saltRounds = 10;
@@ -104,10 +110,7 @@ const checkExistingTenantService = async (orgName) => {
 };
 
 const sendWelcomeEmailService = async (userDetails) => {
-  const { url } = ZEPTOMAIL_CONFIG;
-  const { token } = ZEPTOMAIL_CONFIG.signup;
-
-  const client = new SendMailClient({ url, token });
+  const resend = new Resend(RESEND_CONFIG.apiKey);
 
   const userForJwtToken = {
     user_id: userDetails.user_id,
@@ -117,34 +120,40 @@ const sendWelcomeEmailService = async (userDetails) => {
     expiresIn: '12h',
   });
 
-  client
-    .sendMailWithTemplate({
-      mail_template_key: ZEPTOMAIL_CONFIG.signup.templateKey,
-      bounce_address: ZEPTOMAIL_CONFIG.bounceAddress,
-      from: {
-        address: ZEPTOMAIL_CONFIG.fromEmail,
-        name: ZEPTOMAIL_CONFIG.fromName,
-      },
-      to: [
-        {
-          email_address: {
-            address: userDetails.email,
-            name: userDetails.first_name,
-          },
-        },
-      ],
-      merge_info: {
-        name: userDetails.first_name,
-        username: userDetails.email,
-        verify_account_link: jwtToken,
-      },
-      track_clicks: true,
-      track_opens: true,
-    })
-    .then((resp) => logger.info(resp))
-    .catch((error) => logger.error(error));
+  const {
+    first_name, middle_name, last_name, email, org_id,
+  } = userDetails;
 
-  return 0;
+  const fullName = middle_name
+    ? `${first_name} ${middle_name} ${last_name}`
+    : `${first_name} ${last_name}`;
+
+  const verifyUrl = `${APP_BASE_URL}/superadmin/auth/verify/${jwtToken}`;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: RESEND_CONFIG.fromAddress,
+      to: [email],
+      subject: 'Welcome to Plutus - Verify your email',
+      template: {
+        id: RESEND_CONFIG.signupTemplateId,
+        variables: {
+          Contact_Name: fullName,
+          email,
+          verify_account_link: verifyUrl,
+          tenant_id: org_id, // Still passing org_id if the template needs it for display
+        },
+      },
+    });
+
+    if (error) {
+      logger.error('Resend encountered an error:', error);
+      return;
+    }
+    logger.info('Resend email sent successfully:', data);
+  } catch (err) {
+    logger.error('Exception during email sending:', err);
+  }
 };
 
 const verifyUserService = async (id) => {

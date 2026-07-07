@@ -1,10 +1,16 @@
+/* eslint-disable camelcase */
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { Resend } = require('resend');
 // eslint-disable-next-line no-var
-var { SendMailClient } = require('zeptomail');
+// var { SendMailClient } = require('zeptomail');
 const dal = require('./authDAL');
 const logger = require('../util/logger');
-const { ZEPTOMAIL_CONFIG } = require('../util/config');
+// const { ZEPTOMAIL_CONFIG } = require('../util/config');
+const {
+  RESEND_CONFIG,
+  CLIENT_BASE_URL,
+} = require('../util/config');
 
 const checkExistingUserService = async (
   userIdentifier,
@@ -14,104 +20,97 @@ const checkExistingUserService = async (
   return user || null;
 };
 
-const sendPassResetEmailService = async (userDetails) => {
-  const { url } = ZEPTOMAIL_CONFIG;
-  const { token } = ZEPTOMAIL_CONFIG.recover;
-  const userForJwtToken = {
-    canSetPasswordForUser: userDetails.user_id,
+const sendPassResetEmailService = async (user) => {
+  const resend = new Resend(RESEND_CONFIG.apiKey);
+
+  const payload = {
+    canSetPasswordForUser: user.user_id,
   };
 
-  const jwtToken = jwt.sign(userForJwtToken, process.env.SECRET, {
-    expiresIn: 600,
+  const token = jwt.sign(payload, process.env.SECRET, {
+    expiresIn: '1h',
   });
 
-  const client = new SendMailClient({ url, token });
+  const {
+    first_name, middle_name, last_name, email,
+  } = user;
 
-  client
-    .sendMailWithTemplate({
-      mail_template_key: ZEPTOMAIL_CONFIG.recover.templateKey.passwordResetLink,
-      bounce_address: ZEPTOMAIL_CONFIG.bounceAddress,
-      from: {
-        address: ZEPTOMAIL_CONFIG.fromEmail,
-        name: ZEPTOMAIL_CONFIG.fromName,
-      },
-      to: [
-        {
-          email_address: {
-            address: userDetails.email,
-            name: userDetails.first_name,
-          },
+  const fullName = middle_name
+    ? `${first_name} ${middle_name} ${last_name}`
+    : `${first_name} ${last_name}`;
+
+  const resetLink = `${CLIENT_BASE_URL}/resetpass/${token}`;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: RESEND_CONFIG.fromAddress,
+      to: [email],
+      subject: 'Reset your Plutus password',
+      template: {
+        id: RESEND_CONFIG.passwordResetTemplateId,
+        variables: {
+          Contact_Name: fullName,
+          email,
+          password_reset_link: resetLink,
         },
-      ],
-      merge_info: {
-        name: userDetails.first_name,
-        email: userDetails.email,
-        password_reset_link: jwtToken,
       },
-      track_clicks: true,
-      track_opens: true,
-    })
-    .then((resp) => logger.info(resp))
-    .catch((error) => logger.error(error));
+    });
 
-  return 0;
+    if (error) {
+      logger.error('Resend Error (Password Reset):', error);
+      return;
+    }
+    logger.info('Resend Email Sent (Password Reset):', data);
+  } catch (err) {
+    logger.error('Resend Exception (Password Reset):', err);
+  }
 };
 
-const resetPasswordService = async (userDetails, passwordToUpdate) => {
+const resetPasswordService = async (user, newPassword) => {
   const saltRounds = 10;
-  const newPasswordHash = await bcrypt.hash(passwordToUpdate, saltRounds);
+  const passwordHash = await bcrypt.hash(newPassword, saltRounds);
 
-  const userToUpdate = {
-    first_name: userDetails.first_name,
-    middle_name: userDetails.middle_name,
-    last_name: userDetails.last_name,
-    email: userDetails.email,
-    username: userDetails.username,
-    password_hash: newPasswordHash,
-    user_roles_user_roles_id: userDetails.user_roles_user_roles_id,
-    job_title: userDetails.job_title,
-    status: userDetails.status,
+  const valuesToUpdate = {
+    password_hash: passwordHash,
   };
 
-  const updatedUser = await dal.updateUser(userDetails.user_id, userToUpdate);
-
+  const updatedUser = await dal.updateUser(user.user_id, valuesToUpdate);
   return updatedUser;
 };
 
-const resetPasswordConfirmService = async (userDetails) => {
-  const { url } = ZEPTOMAIL_CONFIG;
-  const { token } = ZEPTOMAIL_CONFIG.recover;
+const resetPasswordConfirmService = async (user) => {
+  const resend = new Resend(RESEND_CONFIG.apiKey);
 
-  const client = new SendMailClient({ url, token });
+  const {
+    first_name, middle_name, last_name, email,
+  } = user;
 
-  client
-    .sendMailWithTemplate({
-      mail_template_key:
-        ZEPTOMAIL_CONFIG.recover.templateKey.passwordResetSuccess,
-      bounce_address: ZEPTOMAIL_CONFIG.bounceAddress,
-      from: {
-        address: ZEPTOMAIL_CONFIG.fromEmail,
-        name: ZEPTOMAIL_CONFIG.fromName,
-      },
-      to: [
-        {
-          email_address: {
-            address: userDetails.email,
-            name: userDetails.first_name,
-          },
+  const fullName = middle_name
+    ? `${first_name} ${middle_name} ${last_name}`
+    : `${first_name} ${last_name}`;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: RESEND_CONFIG.fromAddress,
+      to: [email],
+      subject: 'Your Plutus password has been reset',
+      template: {
+        id: RESEND_CONFIG.passwordResetSuccessTemplateId,
+        variables: {
+          Contact_Name: fullName,
+          email,
         },
-      ],
-      merge_info: {
-        name: userDetails.first_name,
-        email: userDetails.email,
       },
-      track_clicks: true,
-      track_opens: true,
-    })
-    .then((resp) => logger.info(resp))
-    .catch((error) => logger.error(error));
+    });
 
-  return 0;
+    if (error) {
+      logger.error('Resend Error (Reset Success):', error);
+      return;
+    }
+    logger.info('Resend Email Sent (Reset Success):', data);
+  } catch (err) {
+    logger.error('Resend Exception (Reset Success):', err);
+  }
 };
 
 module.exports = {
