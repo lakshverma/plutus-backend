@@ -1,3 +1,11 @@
 .env
 node_modules
 .DS_Store
+.qodo
+
+# Runtime logs (keep the directory, ignore its contents)
+log/*
+!log/.gitkeep
+
+# TLS certificates / key material (provide via env, not the repo)
+*.crt
