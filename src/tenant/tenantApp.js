@@ -5,6 +5,7 @@ const noteRouter = require('./activity/note/noteRouter');
 const callRouter = require('./activity/call/callRouter');
 const searchRouter = require('./search/searchRouter');
 const contactRouter = require('./contact/contactRouter');
+const auditRouter = require('./audit/auditRouter');
 
 const tenantAppRoutes = express.Router();
 
@@ -15,5 +16,6 @@ tenantAppRoutes.use('/contacts', contactRouter);
 tenantAppRoutes.use('/contacts/:contactId/activities', activitiesRouter);
 tenantAppRoutes.use('/contacts/:contactId/notes', noteRouter);
 tenantAppRoutes.use('/contacts/:contactId/calls', callRouter);
+tenantAppRoutes.use('/audit/contact', auditRouter);
 
 module.exports = tenantAppRoutes;
