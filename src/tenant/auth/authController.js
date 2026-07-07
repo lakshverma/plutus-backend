@@ -1,11 +1,14 @@
 const jwt = require('jsonwebtoken');
 const { TENANT_CONTEXT } = require('../../common/util/config');
+const { ROLES } = require('../../common/util/helper');
 
 const {
   createUserService,
   verifyUserService,
   checkExistingUserService,
   sendWelcomeEmailService,
+  getOrgUsersService,
+  updateUserRoleService,
 } = require('./authService');
 
 const createUser = async (req, res) => {
@@ -81,8 +84,55 @@ const verifyUser = async (req, res) => {
   });
 };
 
+// Fetch all users in the organization except the current user
+const getOrgUsers = async (req, res) => {
+  const { orgId, userId } = req.user;
+  try {
+    const users = await getOrgUsersService(orgId, userId);
+    return res.status(200).json(users);
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to fetch organization users.' });
+  }
+};
+
+// Update the role of a specific user within the organization
+const updateUserRole = async (req, res) => {
+  const { orgId, userId: currentUserId } = req.user;
+  const { userId } = req.params;
+  const { role } = req.body;
+
+  // Prevent admin from changing their own role
+  if (currentUserId === userId) {
+    return res.status(403).json({
+      error: 'Admins cannot change their own role.',
+    });
+  }
+
+  // Prevent granting a role more privileged than the caller's own
+  // (lower ROLES number = more privileged). Platform string roles (e.g. 'root') are exempt.
+  const callerRole = req.user.role;
+  if (typeof callerRole === 'number' && ROLES[role] < callerRole) {
+    return res.status(403).json({
+      error: 'You cannot assign a role more privileged than your own.',
+    });
+  }
+
+  try {
+    const updatedUser = await updateUserRoleService(orgId, userId, role);
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    return res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Failed to update user role.' });
+  }
+};
+
 module.exports = {
   createUser,
   confirmEmail,
   verifyUser,
+  getOrgUsers,
+  updateUserRole,
 };

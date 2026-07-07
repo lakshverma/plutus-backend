@@ -59,8 +59,39 @@ const updateUser = async (userId, valuesToUpdate) => {
   return rows[0];
 };
 
+const getUsersByOrg = async (orgId, excludedUserId) => {
+  const query = `
+    SELECT 
+      user_id,
+      first_name,
+      last_name,
+      email,
+      username,
+      job_title,
+      status,
+      user_roles_user_roles_id as role_id
+    FROM org_user 
+    WHERE org_id = $1 AND user_id != $2
+  `;
+  const { rows } = await db.query(query, [orgId, excludedUserId]);
+  return rows;
+};
+
+const updateUserRole = async (orgId, userId, roleId) => {
+  const query = `
+    UPDATE org_user
+    SET user_roles_user_roles_id = $3
+    WHERE org_id = $1 AND user_id = $2
+    RETURNING user_id, email, user_roles_user_roles_id;
+  `;
+  const { rows } = await db.query(query, [orgId, userId, roleId]);
+  return rows[0];
+};
+
 module.exports = {
   findUser,
   createUser,
   updateUser,
+  getUsersByOrg,
+  updateUserRole,
 };

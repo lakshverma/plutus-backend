@@ -1,30 +1,33 @@
 const { check } = require('express-validator');
 const { validationMiddleware } = require('../../common/util/middleware');
+const { ROLES } = require('../../common/util/helper');
 
-const validateLogin = [
-  check('email')
-    .exists()
-    .withMessage('Email is mandatory.')
-    .bail()
-    .notEmpty()
-    .withMessage('Email can not be empty.')
-    .bail()
-    .isEmail()
-    .withMessage('Must use a valid email format')
-    .bail()
-    .normalizeEmail()
-    .isLength({ min: 3 })
-    .withMessage('Minimum 3 characters required.')
-    .bail(),
-  check('password')
-    .exists()
-    .withMessage('password is mandatory.')
-    .bail()
-    .notEmpty()
-    .withMessage('password can not be empty.')
-    .bail(),
-];
+// const validateLogin = [
+//   check('email')
+//     .exists()
+//     .withMessage('Email is mandatory.')
+//     .bail()
+//     .notEmpty()
+//     .withMessage('Email can not be empty.')
+//     .bail()
+//     .isEmail()
+//     .withMessage('Must use a valid email format')
+//     .bail()
+//     .normalizeEmail()
+//     .isLength({ min: 3 })
+//     .withMessage('Minimum 3 characters required.')
+//     .bail(),
+//   check('password')
+//     .exists()
+//     .withMessage('password is mandatory.')
+//     .bail()
+//     .notEmpty()
+//     .withMessage('password can not be empty.')
+//     .bail(),
+// ];
 
+// Should we include validation for Middle Name?
+// Should name be alphanumeric or just alphabetical?
 const validateUserSignup = [
   check('firstName')
     .exists()
@@ -167,8 +170,24 @@ const validateResetPassword = [
   validationMiddleware,
 ];
 
+const validateUpdateRole = [
+  check('role')
+    .exists()
+    .withMessage('User role is mandatory')
+    .bail()
+    .notEmpty()
+    .withMessage("User role can't be empty")
+    .isString()
+    .withMessage('User role must be a text value.')
+    .bail()
+    .isIn(Object.keys(ROLES))
+    .withMessage('Invalid role specified.'),
+  validationMiddleware,
+];
+
 module.exports = {
-  validateLogin,
+  // validateLogin,
   validateUserSignup,
   validateResetPassword,
+  validateUpdateRole,
 };

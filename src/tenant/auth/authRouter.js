@@ -5,6 +5,8 @@ const {
   createUser,
   verifyUser,
   confirmEmail,
+  getOrgUsers,
+  updateUserRole,
 } = require('./authController');
 
 const { ROLES } = require('../../common/util/helper');
@@ -20,5 +22,17 @@ router.post(
 router.get('/verify/:token', verifyUser);
 
 router.post('/confirm-email', confirmEmail);
+
+router.get(
+  '/users',
+  authorize(['root', ROLES.superAdmin, ROLES.admin]),
+  getOrgUsers,
+);
+
+router.patch(
+  '/users/:userId/role',
+  authorize(['root', ROLES.superAdmin, ROLES.admin]),
+  updateUserRole,
+);
 
 module.exports = router;

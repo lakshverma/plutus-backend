@@ -12,6 +12,7 @@ const {
   RESEND_CONFIG,
   APP_BASE_URL,
 } = require('../../common/util/config');
+const { ROLES } = require('../../common/util/helper');
 
 const checkExistingUserService = async (
   userIdentifier,
@@ -129,10 +130,22 @@ const verifyUserService = async (id) => {
   return verificationStatus;
 };
 
+const getOrgUsersService = async (orgId, currentUserId) => dal.getUsersByOrg(orgId, currentUserId);
+
+const updateUserRoleService = async (orgId, userId, roleName) => {
+  const roleId = ROLES[roleName];
+  if (!roleId) {
+    throw new Error('Invalid Role provided');
+  }
+  return dal.updateUserRole(orgId, userId, roleId);
+};
+
 module.exports = {
   checkExistingUserService,
   checkExistingTenantService,
   createUserService,
   sendWelcomeEmailService,
   verifyUserService,
+  getOrgUsersService,
+  updateUserRoleService,
 };
