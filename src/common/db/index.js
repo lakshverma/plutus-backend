@@ -6,8 +6,7 @@ const {
 } = require('../util/config');
 const logger = require('../util/logger');
 
-// Shared connection pools — created once and reused for the process lifetime. Creating a
-// new Pool per query defeats pooling and churns/exhausts Postgres connections.
+// Shared connection pools — created once and reused for the process lifetime.
 const tenantPool = new Pool(PG_TENANT_CONNECTION_OBJ);
 const superAdminPool = new Pool(PG_CONNECTION_OBJ);
 
