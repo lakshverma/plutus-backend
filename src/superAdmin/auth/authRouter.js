@@ -5,6 +5,7 @@ const {
   validateAdminSignup,
 } = require('./authValidator');
 const { authorize } = require('../../common/util/middleware');
+const { authLimiter } = require('../../common/util/rateLimiter');
 const {
   createSuperAdmin,
   loginRoot,
@@ -22,7 +23,7 @@ router.post(
   createSuperAdmin,
 );
 
-router.post('/sa-login', validateLogin, loginSuperAdmin);
+router.post('/sa-login', [authLimiter, validateLogin], loginSuperAdmin);
 
 router.post(
   '/signup',
@@ -30,10 +31,10 @@ router.post(
   createTenant,
 );
 
-router.get('/verify/:token', verifyUser);
+router.get('/verify/:token', authLimiter, verifyUser);
 
-router.post('/confirm-email', confirmEmail);
+router.post('/confirm-email', authLimiter, confirmEmail);
 
-router.post('/', loginRoot);
+router.post('/', authLimiter, loginRoot);
 
 module.exports = router;

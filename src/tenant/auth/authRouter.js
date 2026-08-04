@@ -1,6 +1,7 @@
 const Router = require('express-promise-router');
 const { validateUserSignup } = require('./authValidator');
 const { authorize } = require('../../common/util/middleware');
+const { authLimiter } = require('../../common/util/rateLimiter');
 const {
   createUser,
   verifyUser,
@@ -19,9 +20,9 @@ router.post(
   createUser,
 );
 
-router.get('/verify/:token', verifyUser);
+router.get('/verify/:token', authLimiter, verifyUser);
 
-router.post('/confirm-email', confirmEmail);
+router.post('/confirm-email', authLimiter, confirmEmail);
 
 router.get(
   '/users',

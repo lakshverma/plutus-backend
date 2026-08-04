@@ -135,6 +135,17 @@ const CLIENT_BASE_URL = process.env.NODE_ENV === 'production'
 
 const PORT = process.env.PORT || 3001;
 
+// Per-IP rate limits. Only the max counts are env-tunable; windows are fixed.
+const RATE_LIMIT = {
+  global: { windowMs: 60 * 1000, limit: Number(process.env.RATE_LIMIT_GLOBAL_MAX) || 100 },
+  auth: { windowMs: 15 * 60 * 1000, limit: Number(process.env.RATE_LIMIT_AUTH_MAX) || 10 },
+  heavy: { windowMs: 60 * 1000, limit: Number(process.env.RATE_LIMIT_HEAVY_MAX) || 30 },
+};
+
+// Hops to trust for X-Forwarded-For (0 = no proxy, direct connections only).
+// Set to 1 when deployed behind a single reverse proxy / load balancer.
+const TRUST_PROXY_HOPS = Number(process.env.TRUST_PROXY_HOPS) || 0;
+
 module.exports = {
   PG_CONNECTION_OBJ,
   PG_TENANT_CONNECTION_OBJ,
@@ -145,4 +156,6 @@ module.exports = {
   APP_BASE_URL,
   CLIENT_BASE_URL,
   PORT,
+  RATE_LIMIT,
+  TRUST_PROXY_HOPS,
 };

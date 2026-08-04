@@ -10,11 +10,23 @@ const {
 } = require('./common/util/middleware');
 const superAdminAppRoutes = require('./superAdmin/superAdminApp');
 const tenantAppRoutes = require('./tenant/tenantApp');
-const { tenantStorage } = require('./common/util/config');
+const { tenantStorage, TRUST_PROXY_HOPS } = require('./common/util/config');
+const { globalLimiter } = require('./common/util/rateLimiter');
 
 const app = express();
 
+// Trust N reverse-proxy hops so req.ip reflects the real client (rate limiting
+// keys on it). 0 = direct connections; set TRUST_PROXY_HOPS=1 behind a single
+// proxy/load balancer. See config.js.
+if (TRUST_PROXY_HOPS > 0) {
+  app.set('trust proxy', TRUST_PROXY_HOPS);
+}
+
 app.use(helmet());
+
+// Shed abusive traffic before body parsing and route matching (unknown-path
+// scans included).
+app.use(globalLimiter);
 
 app.use(express.json());
 
