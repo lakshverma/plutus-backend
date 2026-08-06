@@ -9,3 +9,6 @@ log/*
 
 # TLS certificates / key material (provide via env, not the repo)
 *.crt
+
+# Local working notes (this repo is public — keep internal detail out of it)
+CLAUDE.md
