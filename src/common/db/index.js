@@ -10,18 +10,75 @@ const logger = require('../util/logger');
 const tenantPool = new Pool(PG_TENANT_CONNECTION_OBJ);
 const superAdminPool = new Pool(PG_CONNECTION_OBJ);
 
-const testConnection = async () => {
-  try {
-    const query = await superAdminPool.query('select 1');
-    logger.info(
-      `db connection successful! Response: ${JSON.stringify(query.rows)}`,
-    );
-  } catch (error) {
-    logger.error(`db connection unsuccessful. ${error}`);
+// An idle client can fail on its own (server restart, network drop, an idle-connection
+// timeout on the provider's side). Without a listener that arrives as an unhandled
+// 'error' event, which takes the whole process down. pg discards the broken client
+// either way; logging is all that is needed.
+tenantPool.on('error', (error) => {
+  logger.error(`idle client error on tenant pool: ${error.message}`);
+});
+superAdminPool.on('error', (error) => {
+  logger.error(`idle client error on superAdmin pool: ${error.message}`);
+});
+
+const sleep = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
+
+// Confirms the database actually answers before the server starts accepting traffic.
+// Retries with a linear backoff because a serverless Postgres may be resuming from
+// idle, and a deploy that races its database should wait rather than fail.
+// Throws once the retries are exhausted; the caller exits non-zero so the platform
+// records a failed deploy instead of routing traffic to a process that cannot query.
+const verifyConnection = async ({ retries = 5, delayMs = 1000 } = {}) => {
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await superAdminPool.query('select 1');
+      logger.info('db connection verified');
+      return;
+    } catch (error) {
+      if (attempt === retries) {
+        logger.error(`db connection failed after ${retries} attempts: ${error.message}`);
+        throw error;
+      }
+      logger.warn(
+        `db connection attempt ${attempt}/${retries} failed (${error.message}); retrying`,
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await sleep(delayMs * attempt);
+    }
   }
 };
 
-testConnection();
+const PING_TIMEOUT_MS = 5000;
+
+// Cheap round-trip for the readiness endpoint. Bounded so a hung connection reports
+// unhealthy quickly instead of holding the health check open.
+const ping = async () => {
+  let timer;
+  const timeout = new Promise((resolve, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`db ping timed out after ${PING_TIMEOUT_MS}ms`)),
+      PING_TIMEOUT_MS,
+    );
+    timer.unref();
+  });
+
+  try {
+    await Promise.race([superAdminPool.query('select 1'), timeout]);
+    return true;
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+// Drains both pools during shutdown. allSettled so one pool failing to close does not
+// leave the other open.
+const closePools = async () => {
+  const results = await Promise.allSettled([tenantPool.end(), superAdminPool.end()]);
+  results
+    .filter((result) => result.status === 'rejected')
+    .forEach((result) => logger.error(`error closing pool: ${result.reason}`));
+};
 
 // Executes a single SQL query and logs the query(without parameters) and its execution time.
 const query = async (text, params, mode = 'tenant') => {
@@ -43,9 +100,18 @@ const query = async (text, params, mode = 'tenant') => {
   const client = await tenantPool.connect();
   try {
     // Set tenant id as context for current_setting function in postgres. This enforces the
-    // Row level security policy based on tenant id.
-    await client.query(`SET app.current_tenant = '${TENANT_CONTEXT.tenantInfo}'`);
-    await client.query(`SET app.current_userid = '${TENANT_CONTEXT.userInfo}'`);
+    // Row level security policy based on tenant id. set_config is the parameterised
+    // equivalent of SET: the values arrive as bound parameters rather than as interpolated
+    // SQL, which matters because this sits directly on the tenant-isolation boundary.
+    // `false` keeps them session-scoped, exactly as SET was.
+    await client.query('select set_config($1, $2, false)', [
+      'app.current_tenant',
+      TENANT_CONTEXT.tenantInfo,
+    ]);
+    await client.query('select set_config($1, $2, false)', [
+      'app.current_userid',
+      TENANT_CONTEXT.userInfo,
+    ]);
     logger.info('tenant context has been successfully set');
 
     const start = Date.now();
@@ -80,11 +146,14 @@ const getClient = async (mode = 'tenant') => {
   // the Row level security policy based on tenant id.
   // The variable is valid for a db session (unless reassigned)
   if (mode === 'tenant') {
-    const setTenantQuery = `SET app.current_tenant = '${TENANT_CONTEXT.tenantInfo}'`;
-    await client.query(setTenantQuery);
-
-    const setTenantUserQuery = `SET app.current_userid = '${TENANT_CONTEXT.userInfo}'`;
-    await client.query(setTenantUserQuery);
+    await client.query('select set_config($1, $2, false)', [
+      'app.current_tenant',
+      TENANT_CONTEXT.tenantInfo,
+    ]);
+    await client.query('select set_config($1, $2, false)', [
+      'app.current_userid',
+      TENANT_CONTEXT.userInfo,
+    ]);
   }
   // The variable name is 'originalQuery' because 'query' is already defined in upper scope.
   const originalQuery = client.query;
@@ -117,4 +186,7 @@ const getClient = async (mode = 'tenant') => {
 module.exports = {
   query,
   getClient,
+  verifyConnection,
+  ping,
+  closePools,
 };
