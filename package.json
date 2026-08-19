@@ -4,15 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "cross-env NODE_ENV=production node index.js",
+    "start": "node index.js",
     "dev": "cross-env NODE_ENV=development nodemon index.js",
+    "lint": "eslint .",
     "db:dump-schema": "./scripts/dump-schema.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Lakshay Verma",
   "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "bcrypt": "^5.0.1",
+    "cors": "^2.8.6",
     "dotenv": "^14.2.0",
     "express": "^4.17.2",
     "express-jwt": "^6.1.1",
@@ -25,8 +30,7 @@
     "pg": "^8.7.1",
     "resend": "^6.7.0",
     "winston": "^3.7.2",
-    "winston-daily-rotate-file": "^4.6.1",
-    "zeptomail": "^3.0.0"
+    "winston-daily-rotate-file": "^4.6.1"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
