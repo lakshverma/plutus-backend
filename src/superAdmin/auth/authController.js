@@ -10,24 +10,32 @@ const {
 
 const loginRoot = async (req, res) => {
   const { body } = req;
+  const rootUser = process.env.ROOT_USER;
+  const rootPasswordHash = process.env.ROOT_PASSWORD_HASH;
 
-  if (
-    !(
-      body.username === process.env.ROOT_USER
-      && body.password === process.env.ROOT_PASSWORD
-    )
-  ) {
+  // Root login stays closed unless both variables are configured, so a deployment
+  // that never sets them has no root account to attack. The password is compared
+  // against a bcrypt hash — the same treatment every other account gets, and unlike
+  // === it does not leak the answer through timing.
+  const configured = Boolean(rootUser && rootPasswordHash);
+  const supplied = typeof body.username === 'string' && typeof body.password === 'string';
+
+  const credentialsValid = configured && supplied && body.username === rootUser
+    ? await bcrypt.compare(body.password, rootPasswordHash)
+    : false;
+
+  if (!credentialsValid) {
     return res.status(401).json({
       error: 'invalid username or password',
     });
   }
 
   const userForToken = {
-    username: process.env.ROOT_USER,
+    username: rootUser,
     role: 'root',
   };
 
-  const token = jwt.sign(userForToken, process.env.SECRET);
+  const token = jwt.sign(userForToken, process.env.SECRET, { expiresIn: '12h' });
 
   return res.status(200).send({ token });
 };
@@ -74,7 +82,7 @@ const loginSuperAdmin = async (req, res) => {
     role: 'superadmin',
   };
 
-  const token = jwt.sign(userForToken, process.env.SECRET);
+  const token = jwt.sign(userForToken, process.env.SECRET, { expiresIn: '12h' });
 
   return res.status(200).send({ token });
 };
