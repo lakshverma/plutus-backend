@@ -1,14 +1,11 @@
 /* eslint-disable camelcase */
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-// eslint-disable-next-line no-var
-// var { SendMailClient } = require('zeptomail');
-const { Resend } = require('resend');
 const dal = require('./authDAL');
 const logger = require('../../common/util/logger');
-// const { ZEPTOMAIL_CONFIG } = require('../../common/util/config');
+const { sendEmail } = require('../../common/util/mailer');
 const {
-  RESEND_CONFIG, // Changed config import
+  RESEND_CONFIG,
   APP_BASE_URL,
 } = require('../../common/util/config');
 
@@ -110,8 +107,6 @@ const checkExistingTenantService = async (orgName) => {
 };
 
 const sendWelcomeEmailService = async (userDetails) => {
-  const resend = new Resend(RESEND_CONFIG.apiKey);
-
   const userForJwtToken = {
     user_id: userDetails.user_id,
   };
@@ -131,7 +126,7 @@ const sendWelcomeEmailService = async (userDetails) => {
   const verifyUrl = `${APP_BASE_URL}/superadmin/auth/verify/${jwtToken}`;
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await sendEmail({
       from: RESEND_CONFIG.fromAddress,
       to: [email],
       subject: 'Welcome to Plutus - Verify your email',

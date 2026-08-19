@@ -1,14 +1,11 @@
 /* eslint-disable camelcase */
-// eslint-disable-next-line no-var
-// var { SendMailClient } = require('zeptomail');
-const { Resend } = require('resend');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const logger = require('../../common/util/logger');
 const dal = require('./authDAL');
+const { sendEmail } = require('../../common/util/mailer');
 const {
   TENANT_CONTEXT,
-  // ZEPTOMAIL_CONFIG,
   RESEND_CONFIG,
   APP_BASE_URL,
 } = require('../../common/util/config');
@@ -62,8 +59,6 @@ const createUserService = async (values, role = 'standard') => {
 // Currently the email template to verify the user contains superadmin/auth/verify link.
 // Decide whether there should be a separate verify link for tenants.
 const sendWelcomeEmailService = async (userDetails) => {
-  const resend = new Resend(RESEND_CONFIG.apiKey);
-
   const userForJwtToken = {
     user_id: userDetails.user_id,
   };
@@ -84,7 +79,7 @@ const sendWelcomeEmailService = async (userDetails) => {
   const verifyUrl = `${APP_BASE_URL}/${TENANT_CONTEXT.orgId}/auth/verify/${jwtToken}`;
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await sendEmail({
       from: RESEND_CONFIG.fromAddress,
       to: [email],
       subject: 'Welcome to Plutus - Verify your email', // Template subject takes, strictly speaking, precedence if set there

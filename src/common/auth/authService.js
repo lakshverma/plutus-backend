@@ -1,12 +1,9 @@
 /* eslint-disable camelcase */
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { Resend } = require('resend');
-// eslint-disable-next-line no-var
-// var { SendMailClient } = require('zeptomail');
 const dal = require('./authDAL');
 const logger = require('../util/logger');
-// const { ZEPTOMAIL_CONFIG } = require('../util/config');
+const { sendEmail } = require('../util/mailer');
 const {
   RESEND_CONFIG,
   CLIENT_BASE_URL,
@@ -21,8 +18,6 @@ const checkExistingUserService = async (
 };
 
 const sendPassResetEmailService = async (user) => {
-  const resend = new Resend(RESEND_CONFIG.apiKey);
-
   const payload = {
     canSetPasswordForUser: user.user_id,
   };
@@ -42,7 +37,7 @@ const sendPassResetEmailService = async (user) => {
   const resetLink = `${CLIENT_BASE_URL}/resetpass/${token}`;
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await sendEmail({
       from: RESEND_CONFIG.fromAddress,
       to: [email],
       subject: 'Reset your Plutus password',
@@ -79,8 +74,6 @@ const resetPasswordService = async (user, newPassword) => {
 };
 
 const resetPasswordConfirmService = async (user) => {
-  const resend = new Resend(RESEND_CONFIG.apiKey);
-
   const {
     first_name, middle_name, last_name, email,
   } = user;
@@ -90,7 +83,7 @@ const resetPasswordConfirmService = async (user) => {
     : `${first_name} ${last_name}`;
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await sendEmail({
       from: RESEND_CONFIG.fromAddress,
       to: [email],
       subject: 'Your Plutus password has been reset',
