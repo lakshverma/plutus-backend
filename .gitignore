@@ -1,4 +1,7 @@
+# Secrets. `.env` alone would leave .env.local, .env.backup and friends tracked.
 .env
+.env.*
+!.env.example
 node_modules
 .DS_Store
 .qodo
