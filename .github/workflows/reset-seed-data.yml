@@ -1,0 +1,36 @@
+name: Reset seeded data
+
+# The publicly reachable environment signs visitors in as a shared account, so any
+# of them can edit or delete records. Rebuilding the seeded tenants nightly means a
+# cluttered or emptied dataset lives for at most a day, without anyone tending it.
+#
+# Only the orgs named in db/seed/data/orgs.js are touched. Any other tenant in the
+# same database is left alone.
+
+on:
+  schedule:
+    # 02:00 UTC, which is outside working hours in both Europe and India.
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run db:seed:reset
+        env:
+          # The owning role: the reset writes across both tenants, which row-level
+          # security would prevent the application role from doing.
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGSSL_MODE: require
+          SEED_DEMO_EMAIL: ${{ secrets.SEED_DEMO_EMAIL }}
+          SEED_DEMO_PASSWORD: ${{ secrets.SEED_DEMO_PASSWORD }}
