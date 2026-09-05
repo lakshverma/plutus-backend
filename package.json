@@ -7,7 +7,11 @@
     "start": "node index.js",
     "dev": "cross-env NODE_ENV=development nodemon index.js",
     "lint": "eslint .",
-    "db:dump-schema": "./scripts/dump-schema.sh",
+    "db:bootstrap": "node db/bootstrap/bootstrap.js",
+    "db:migrate": "node-pg-migrate up -m db/migrations",
+    "db:migrate:down": "node-pg-migrate down -m db/migrations",
+    "db:seed": "node db/seed/seed.js",
+    "db:seed:reset": "node db/seed/reset.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Lakshay Verma",
@@ -37,6 +41,7 @@
     "eslint": "^8.18.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.26.0",
+    "node-pg-migrate": "^9.0.0",
     "nodemon": "^2.0.15"
   }
 }

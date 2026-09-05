@@ -1,8 +1,8 @@
 /* eslint-disable camelcase */
 require('dotenv').config();
-const fs = require('fs');
 const { AsyncLocalStorage } = require('async_hooks');
 const logger = require('./logger');
+const { buildSslOptions, stripSslParams, describeTarget } = require('./pgConnection');
 
 // Per-request store so concurrent requests never share tenant/user identity.
 // Each request runs inside tenantStorage.run({ orgId, userId }, ...) (see app.js),
@@ -34,67 +34,8 @@ if (process.env.SECRET.length < 32) {
   );
 }
 
-// TLS for both pools:
-//   require    encrypt and verify the server certificate against Node's bundled CA
-//              store — correct for managed providers with publicly-trusted certs.
-//   verify-ca  encrypt and verify against the private CA supplied in PGSSL_CA.
-//   disable    plain TCP; a local Postgres only.
-const PGSSL_MODE = process.env.PGSSL_MODE || 'require';
-
-// A PEM certificate does not survive a .env round-trip — dotenv cannot hold a raw
-// multi-line value — so a private CA is supplied either as a file path
-// (PGSSL_CA_FILE, the practical choice locally) or inline (PGSSL_CA, for hosting
-// platforms whose environment editors accept multi-line values).
-const readPrivateCa = () => {
-  if (process.env.PGSSL_CA_FILE) {
-    return fs.readFileSync(process.env.PGSSL_CA_FILE, 'utf8');
-  }
-  return process.env.PGSSL_CA;
-};
-
-const buildSslOptions = () => {
-  if (PGSSL_MODE === 'disable') return false;
-  if (PGSSL_MODE === 'verify-ca') {
-    const ca = readPrivateCa();
-    // Fail loudly rather than silently falling back to the public trust store: a
-    // half-configured CA is how certificate verification quietly stops happening.
-    if (!ca || !ca.includes('BEGIN CERTIFICATE')) {
-      throw new Error(
-        'PGSSL_MODE=verify-ca but no usable certificate was found in PGSSL_CA_FILE or PGSSL_CA.',
-      );
-    }
-    return { rejectUnauthorized: true, ca };
-  }
-  return { rejectUnauthorized: true };
-};
-
-// pg-connection-string maps an `sslmode` query parameter onto its own ssl config, and
-// that mapping overrides the `ssl` option passed alongside connectionString. Strip it
-// so TLS is decided in exactly one place: PGSSL_MODE. Provider-issued URLs routinely
-// carry ?sslmode=require.
-const stripSslParams = (connectionString) => {
-  try {
-    const url = new URL(connectionString);
-    url.searchParams.delete('sslmode');
-    url.searchParams.delete('ssl');
-    return url.toString();
-  } catch (error) {
-    // Not a parseable URL — hand it to pg unchanged and let pg report the problem.
-    return connectionString;
-  }
-};
-
-// Host and database a connection string points at, with the password dropped. Logged
-// at startup so a process pointed somewhere unexpected announces it in its first lines
-// rather than by corrupting the wrong data.
-const describeTarget = (connectionString) => {
-  try {
-    const url = new URL(connectionString);
-    return `${url.username}@${url.hostname}${url.pathname}`;
-  } catch (error) {
-    return 'unparseable connection string';
-  }
-};
+// TLS mode (PGSSL_MODE), connection-string handling and the redacted target used in
+// the startup log come from ./pgConnection, which the scripts under db/ share.
 
 // Sized well below a small managed Postgres' connection cap: the API runs as a single
 // instance and each request holds a client only for the length of a query.
@@ -108,12 +49,13 @@ const buildPoolConfig = (connectionString) => ({
   connectionTimeoutMillis: 10 * 1000,
 });
 
-// Owns every table, so it bypasses RLS by ownership (FORCE ROW LEVEL SECURITY is
-// deliberately off). Used by the superAdmin pool, and by migrations and seeds.
+// plutus_admin: owns every table, so it bypasses RLS by ownership (FORCE ROW LEVEL
+// SECURITY is deliberately off). Used by the superAdmin pool, migrations and seeds.
 const PG_CONNECTION_OBJ = buildPoolConfig(process.env.DATABASE_URL);
 
-// Connects as the `tenant` role, which owns nothing and has BYPASSRLS = false, so the
-// tenant isolation policies genuinely bind. See CLAUDE.md.
+// plutus_tenant: owns nothing and has BYPASSRLS = false, so the tenant isolation
+// policies genuinely bind. Every tenant request runs through this pool. The two-pool
+// model is described in PROJECT_DOCUMENTATION.md, section 6.
 const PG_TENANT_CONNECTION_OBJ = buildPoolConfig(process.env.DATABASE_URL_TENANT);
 
 const DB_TARGETS = {
