@@ -1,0 +1,43 @@
+# Render blueprint for the API. Public URLs are literals; anything secret is
+# sync: false and entered in the dashboard when the blueprint is first applied.
+services:
+  - type: web
+    name: plutus-api
+    runtime: node
+    region: frankfurt
+    # 0.5 CPU, 512 MB, always on. The legacy name "starter" is also accepted.
+    plan: 0.5c-512mb
+    branch: master
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      # Present at build time too, so npm ci omits devDependencies. Nothing
+      # in them is needed at runtime: migrations run from a developer machine.
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY_HOPS
+        value: "1"
+      - key: PGSSL_MODE
+        value: require
+      - key: MAIL_DRY_RUN
+        value: "false"
+      - key: LOG_LEVEL
+        value: info
+      - key: APP_BASE_URL
+        value: https://api.plutus.lakshayverma.com
+      - key: CLIENT_BASE_URL
+        value: https://plutus.lakshayverma.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://plutus.lakshayverma.com,https://plutus-*.vercel.app"
+      - key: RESEND_FROM_ADDRESS
+        value: "Plutus <noreply@lakshayverma.com>"
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_TENANT
+        sync: false
+      - key: SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
