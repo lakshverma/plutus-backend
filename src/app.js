@@ -22,8 +22,8 @@ const { globalLimiter } = require('./common/util/rateLimiter');
 const app = express();
 
 // Trust N reverse-proxy hops so req.ip reflects the real client (rate limiting
-// keys on it). 0 = direct connections; set TRUST_PROXY_HOPS=1 behind a single
-// proxy/load balancer. See config.js.
+// keys on it). 0 = direct connections; deployed, set TRUST_PROXY_HOPS to the
+// number of proxies actually in front of the app. See config.js.
 if (TRUST_PROXY_HOPS > 0) {
   app.set('trust proxy', TRUST_PROXY_HOPS);
 }

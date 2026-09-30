@@ -156,7 +156,7 @@ Authentication, RBAC, row-level security, input validation, and logging are each
   - Heavy limiter on expensive endpoints (search, life-events report) — default 30 requests/minute
   - Standard `RateLimit` headers (IETF draft-7) plus `Retry-After` on `429` responses
   - Tunable via `RATE_LIMIT_GLOBAL_MAX`, `RATE_LIMIT_AUTH_MAX`, `RATE_LIMIT_HEAVY_MAX`
-  - `TRUST_PROXY_HOPS` controls how many reverse-proxy hops to trust for client IP resolution (0 = direct; set to 1 behind a single load balancer/proxy)
+  - `TRUST_PROXY_HOPS` controls how many reverse-proxy hops to trust for client IP resolution (0 = direct; deployed, set it to the number of proxies actually in front of the app, which on a hosting platform can be more than one). Set too low, `req.ip` resolves to a proxy address every caller shares, pooling them all into one rate-limit bucket
   - In-memory store (single process); swap to a shared store (e.g. Redis) via the limiter's `store` option when scaling horizontally
 
 ## 12. Development Practices

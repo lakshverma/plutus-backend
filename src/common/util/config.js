@@ -135,7 +135,8 @@ const RATE_LIMIT = {
 };
 
 // Hops to trust for X-Forwarded-For (0 = no proxy, direct connections only).
-// Set to 1 when deployed behind a single reverse proxy / load balancer.
+// Deployed, set it to the number of proxies actually in front of the app, which
+// on a hosting platform can be more than one.
 const TRUST_PROXY_HOPS = Number(process.env.TRUST_PROXY_HOPS) || 0;
 
 module.exports = {
