@@ -17,8 +17,12 @@ services:
       # in them is needed at runtime: migrations run from a developer machine.
       - key: NODE_ENV
         value: production
+      # Proxies between the caller and the container: the platform's CDN fronts
+      # custom domains, and its internal load balancer sits behind it. req.ip
+      # has to resolve past both, or per-IP rate limiting keys on the CDN edge,
+      # which every caller shares.
       - key: TRUST_PROXY_HOPS
-        value: "1"
+        value: "2"
       - key: PGSSL_MODE
         value: require
       - key: MAIL_DRY_RUN
